@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker</title>
+    <link rel="stylesheet" href="ranking.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div id="nav-ranking" class="nav-tab active" onclick="switchTab('ranking-tab', this)">🏆 <span
+                class="tab-text">Ranking</span></div>
+        <div id="nav-players" class="nav-tab" onclick="switchTab('players-tab', this)">👥 <span
+                class="tab-text">Players</span></div>
+        <div id="nav-addons" class="nav-tab" onclick="switchTab('addons-tab', this)">🃏 <span
+                class="tab-text">Game</span></div>
+        <div id="nav-hof" class="nav-tab" onclick="switchTab('hof-tab', this)">⭐ <span class="tab-text">Hall of
+                Fame</span></div>
+    </nav>
+
+    <div class="container">
+        <div id="ranking-tab" class="tab-content active">
+            <h1>🏆 Poker Ranking 🏆</h1>
+            <div id="rankings-container">
+                <div class="loading">Loading rankings...</div>
+            </div>
+
+            <div class="global-ranking-section">
+                <h2 class="year-header">🌍 Global Ranking</h2>
+                <div id="global-rankings-container">
+                    <!-- Dynamic global ranking content -->
+                </div>
+            </div>
+        </div>
+
+        <div id="players-tab" class="tab-content">
+            <h1>👥 Players 👥</h1>
+            <div id="players-container" class="players-grid">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+
+        <div id="addons-tab" class="tab-content">
+            <h1>🃏 Game 🃏</h1>
+
+            <div class="dashboard-container">
+                <!-- Blind Counter Box -->
+                <div class="dashboard-box">
+                    <h3>📢 Blinds</h3>
+                    <div class="blind-input-container" style="margin-top: 10px;">
+                        <input type="number" id="blind-base" value="50" step="50" onchange="updateBlinds()">
+                    </div>
+                    <div class="blind-values">
+                        <div class="blind-item">
+                            <span class="blind-label">Small Blind</span>
+                            <span class="blind-amount" id="sb-amount">25</span>
+                        </div>
+                        <div class="blind-item">
+                            <span class="blind-label">Big Blind</span>
+                            <span class="blind-amount" id="bb-amount">50</span>
+                        </div>
+                    </div>
+                    <div class="blind-controls">
+                        <button class="dash-btn btn-reset" onclick="adjustBlinds(-50)">-50</button>
+                        <button class="dash-btn" style="background: #9e9e9e; color: white;"
+                            onclick="resetBlinds()">Reset</button>
+                        <button class="dash-btn btn-play" onclick="adjustBlinds(50)">+50</button>
+                    </div>
+                </div>
+
+                <!-- Timer Box -->
+                <div class="dashboard-box">
+                    <h3>🕒 Blind Countdown</h3>
+                    <span class="timer-display" id="timer-display">15:00</span>
+                    <div class="timer-controls">
+                        <button class="dash-btn btn-play" id="timer-start" onclick="startTimer()">▶ Play</button>
+                        <button class="dash-btn btn-pause" onclick="pauseTimer()">⏸ Pause</button>
+                        <button class="dash-btn btn-reset" onclick="resetTimer()">🔄 Reset</button>
+                    </div>
+                    <div class="timer-setting">
+                        Start at: <input type="number" id="timer-start-minutes" value="15" min="1" max="60"> min
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-bar">
+                <div class="multiplier-container">
+                    <label>Buy-in: R$</label>
+                    <input type="number" id="buyin-multiplier" class="multiplier-input" value="10" min="1"
+                        onchange="saveAndRefreshAddons()">
+                </div>
+                <div class="summary-item">Add-Ons: <span id="summary-rayon">0</span></div>
+                <div class="summary-item pot">Pot: R$ <span id="summary-pot">0</span></div>
+                <div class="summary-item" style="color: #ffd700; font-size: 1.1em;">1st: R$ <span
+                        id="summary-first">0</span></div>
+                <div class="summary-item" style="color: #c0c0c0; font-size: 1.1em;">2nd: R$ <span
+                        id="summary-second">0</span></div>
+            </div>
+
+            <div class="add-player-form">
+                <input type="text" id="new-player-name" class="add-player-input" placeholder="New player name...">
+                <button class="add-player-btn" onclick="addNewPlayer()">➕ Add Player</button>
+            </div>
+
+            <div class="reset-container">
+                <button class="reset-button" onclick="resetAllAddons()">🔄 Reset All Counts</button>
+            </div>
+
+            <ul id="addon-list" class="addon-list">
+                <!-- Dynamic content -->
+            </ul>
+        </div>
+
+        <!-- Hall of Fame -->
+        <div id="hof-tab" class="tab-content">
+            <div class="hall-of-fame">
+                <h2>⭐ Hall of Fame ⭐</h2>
+
+
+                <ul class="hof-list" id="hof-list">
+                    <!-- Dynamic content -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Gallery -->
+        <div id="gallery-tab" class="tab-content">
+            <h1>🖼️ Gallery 🖼️</h1>
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Dates Modal -->
+    <div id="win-dates-modal" class="modal" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="modal-person-name"></h2>
+                <p class="modal-year">Year: <span id="modal-year"></span></p>
+            </div>
+            <ul id="dates-list"></ul>
+        </div>
+    </div>
+
+    <!-- Player Details Modal -->
+    <div id="player-modal" class="modal" onclick="if(event.target === this) closePlayerModal()">
+        <div class="modal-content">
+            <span class="close-button" onclick="closePlayerModal()">&times;</span>
+            <div id="player-modal-content">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="modal" onclick="if(event.target === this) closeImageModal()">
+        <div class="modal-content image-modal-content">
+            <span class="close-button" onclick="closeImageModal()">&times;</span>
+            <button class="nav-button prev-button" onclick="prevImage(event)">&#10094;</button>
+            <img id="expanded-image" src="" alt="Expanded image">
+            <button class="nav-button next-button" onclick="nextImage(event)">&#10095;</button>
+        </div>
+    </div>
+
+    <!-- Import database -->
+    <script src="database.js"></script>
+
+    <script>
+        // Function to format date
+        function formatDate(dateString) {
+            return dateString;
+            // const date = new Date(dateString);
+            // const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            // return date.toLocaleDateString('pt-BR', options);
+        }
+
+        // Function to show win dates modal
+        function showWinDates(name, dates, year) {
+            const modal = document.getElementById('win-dates-modal');
+            const modalName = document.getElementById('modal-person-name');
+            const modalYear = document.getElementById('modal-year');
+            const datesList = document.getElementById('dates-list');
+
+            modalName.textContent = name;
+            modalYear.textContent = year;
+
+            datesList.innerHTML = dates.map((date, index) => `
+                <li class="date-item">
+                    <span class="date-number">#${index + 1}</span>
+                    <span class="date-value">🏆 ${formatDate(date)}</span>
+                </li>
+            `).join('');
+
+            modal.style.display = 'flex';
+        }
+
+        // Function to close modal
+        function closeModal() {
+            const modal = document.getElementById('win-dates-modal');
+            modal.style.display = 'none';
+        }
+
+        // Function to show player details modal
+        function showPlayerModal(name) {
+            const modal = document.getElementById('player-modal');
+            const content = document.getElementById('player-modal-content');
+            const playerStats = getPlayerStats();
+            const stats = playerStats[name];
+
+            if (!stats) return;
+
+            const avatarUrl = avatarsData[name];
+            const avatarDisplay = avatarUrl
+                ? `<div class="player-avatar" style="width: 200px; height: 200px; margin: 0 auto 20px auto;"><img src="${avatarUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover;"></div>`
+                : `<div class="player-avatar" style="width: 200px; height: 200px; margin: 0 auto 20px auto; font-size: 6em;">👤</div>`;
+
+            content.innerHTML = `
+                <div class="modal-header">
+                    ${avatarDisplay}
+                    <h2>${name}</h2>
+                </div>
+                <div style="text-align: center; font-size: 1.2em;">
+                    <div class="player-card-wins" style="font-size: 1.1em; padding: 5px 15px; margin-bottom: 15px;">
+                        Total Wins: ${stats.wins} 🏆
+                    </div>
+                    ${stats.hof > 0 ? `
+                        <div class="player-card-hof" style="font-size: 1.1em; padding: 5px 15px; display: block; width: fit-content; margin: 0 auto;">
+                            Hall of Fame Entries: ${stats.hof} ⭐
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+        }
+
+        // Function to close player modal
+        function closePlayerModal() {
+            const modal = document.getElementById('player-modal');
+            modal.style.display = 'none';
+        }
+
+        // Function to get rank display (medal or number)
+        function getRankDisplay(rank) {
+            const medals = ['🥇', '🥈', '🥉'];
+            if (rank >= 1 && rank <= 3) {
+                return `<div class="rank-medal">${medals[rank - 1]}</div>`;
+            }
+            return `<div class="rank">${rank}</div>`;
+        }
+
+        // Function to get rank class (for styling)
+        function getRankClass(rank) {
+            const classes = ['first', 'second', 'third'];
+            return (rank >= 1 && rank <= 3) ? classes[rank - 1] : '';
+        }
+
+        // Function to generate trophy icons
+        function generateTrophies(wins) {
+            let trophiesHTML = '';
+            for (let i = 0; i < wins; i++) {
+                trophiesHTML += '<span class="trophy-icon">🏆</span>';
+            }
+            return trophiesHTML;
+        }
+
+        // Function to create ranking HTML for a year
+        function createYearSection(year, rankings) {
+            return `
+                <div class="year-section">
+                    <h2 class="year-header">${year}</h2>
+                    <ul class="ranking-list">
+                        ${rankings.map((person, index) => {
+                const rank = rankings.findIndex(p => p.wins === person.wins) + 1;
+                return `
+                            <li class="ranking-item ${getRankClass(rank)}" data-name="${person.name}" data-year="${year}" data-dates='${JSON.stringify(person.dates)}'>
+                                ${getRankDisplay(rank)}
+                                <div class="person-info">
+                                    <div class="person-name">
+                                        ${person.name}
+                                    </div>
+                                    <div class="trophies">
+                                        ${generateTrophies(person.wins)}
+                                        <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
+                                    </div>
+                                </div>
+                            </li>
+                        `;
+            }).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Function to load and display rankings
+        function loadRankings() {
+            const container = document.getElementById('rankings-container');
+
+            try {
+                // Sort years in descending order and filter out year 2000
+                const years = Object.keys(rankingsData)
+                    .filter(year => year !== "2000")
+                    .sort((a, b) => b - a);
+
+                // Generate HTML for visible years
+                let html = '';
+                years.forEach(year => {
+                    html += createYearSection(year, rankingsData[year]);
+                });
+
+                container.innerHTML = html;
+
+                // Calculate and generate Global Ranking (excluding hidden years for this page)
+                const globalContainer = document.getElementById('global-rankings-container');
+                const globalStats = {};
+                Object.entries(rankingsData).forEach(([year, yearRankings]) => {
+                    if (year === "2000") return;
+                    yearRankings.forEach(player => {
+                        if (!globalStats[player.name]) globalStats[player.name] = 0;
+                        globalStats[player.name] += player.wins;
+                    });
+                });
+
+                const globalRankings = Object.entries(globalStats)
+                    .map(([name, wins]) => ({ name, wins }))
+                    .sort((a, b) => b.wins - a.wins);
+
+                let globalHtml = `
+                    <ul class="ranking-list global-list">
+                        ${globalRankings.map((person, index) => {
+                    const rank = globalRankings.findIndex(p => p.wins === person.wins) + 1;
+                    return `
+                            <li class="ranking-item global-item ${getRankClass(rank)}" onclick="showPlayerModal('${person.name}')" style="cursor: pointer;">
+                                ${getRankDisplay(rank)}
+                                <div class="person-info">
+                                    <div class="person-name">${person.name}</div>
+                                    <div class="trophies">
+                                        <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
+                                    </div>
+                                </div>
+                            </li>
+                        `;
+                }).join('')}
+                    </ul>
+                `;
+                globalContainer.innerHTML = globalHtml;
+
+                // Add event listeners to all ranking items
+                document.querySelectorAll('.ranking-item').forEach(rankingItem => {
+                    rankingItem.addEventListener('click', function () {
+                        const name = this.getAttribute('data-name');
+                        const year = this.getAttribute('data-year');
+                        const dates = JSON.parse(this.getAttribute('data-dates'));
+                        showWinDates(name, dates, year);
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error loading rankings:', error);
+                container.innerHTML = `
+                    <div class="error">
+                        <h2>⚠️ Error Loading Rankings</h2>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 10px; font-size: 0.9em;">
+                            Make sure you're running this page through a web server.<br>
+                            Run: <code>python3 -m http.server 8000</code><br>
+                            Then open: <code>http://localhost:8000/ranking.html</code>
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to load and display Hall of Fame
+        function loadHallOfFame() {
+            const hofList = document.getElementById('hof-list');
+            hofList.innerHTML = hallOfFameData.map(item => `
+                <li class="hof-item">
+                    <div class="hof-info">
+                        <span class="hof-date">${item.date}</span>
+                        <span class="hof-name">${item.name}</span>
+                        <span class="hof-hand">${item.hand}</span>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Function to load and display Players
+        function loadPlayers() {
+            const container = document.getElementById('players-container');
+            const playerStats = getPlayerStats();
+
+            const players = Object.entries(playerStats)
+                .sort((a, b) => a[0].localeCompare(b[0])) // Sort alphabetically by name
+                .map(([name, stats]) => {
+                    const avatarUrl = avatarsData[name];
+                    const avatarDisplay = avatarUrl
+                        ? `<img src="${avatarUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                        : "👤";
+
+                    return `
+                        <div class="player-card" onclick="showPlayerModal('${name}')" style="cursor: pointer;">
+                            <div class="player-avatar">${avatarDisplay}</div>
+                            <div class="player-card-name">${name}</div>
+                            <div class="player-card-wins">Total wins: ${stats.wins} 🏆</div>
+                            ${stats.hof > 0 ? `<div class="player-card-hof">Hall of Fame: ${stats.hof} ⭐</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+            container.innerHTML = players;
+        }
+
+        // Shared helper to get all players and their base stats
+        function getPlayerStats() {
+            const playerStats = {};
+
+            // Calculate total wins from rankingsData
+            Object.values(rankingsData).forEach(yearRankings => {
+                yearRankings.forEach(player => {
+                    if (!playerStats[player.name]) {
+                        playerStats[player.name] = { wins: 0, hof: 0 };
+                    }
+                    playerStats[player.name].wins += player.wins;
+                });
+            });
+
+            // Count Hall of Fame mentions
+            hallOfFameData.forEach(item => {
+                if (!playerStats[item.name]) {
+                    playerStats[item.name] = { wins: 0, hof: 0 };
+                }
+                playerStats[item.name].hof += 1;
+            });
+
+            return playerStats;
+        }
+
+        // Function to load and display Add-ons
+        function loadAddons() {
+            const container = document.getElementById('addon-list');
+            const playerStats = getPlayerStats();
+            const playerNames = Object.keys(playerStats).sort();
+
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[], "buyin": 10, "manualPlayers": []}');
+            const addonData = storageData.counts || {};
+            const outPlayers = storageData.out || [];
+            const manualPlayers = storageData.manualPlayers || [];
+
+            const allPlayerNames = Array.from(new Set([...playerNames, ...manualPlayers])).sort();
+
+            // Set buyin from storage
+            document.getElementById('buyin-multiplier').value = storageData.buyin || 10;
+
+            // Sort logic: active players first, then 'out' players
+            const sortedNames = [...allPlayerNames].sort((a, b) => {
+                const aOut = outPlayers.includes(a);
+                const bOut = outPlayers.includes(b);
+                if (aOut && !bOut) return 1;
+                if (!aOut && bOut) return -1;
+                return a.localeCompare(b);
+            });
+
+            container.innerHTML = sortedNames.map(name => {
+                const count = addonData[name] || 0;
+                const isOut = outPlayers.includes(name);
+                const isIn = !isOut;
+                const isManual = manualPlayers.includes(name);
+
+                return `
+                    <li class="addon-item ${isOut ? 'player-out' : ''}">
+                        <div style="display: flex; align-items: center;">
+                            ${isManual ? `<button class="delete-player-btn" onclick="removeManualPlayer('${name}')">×</button>` : ''}
+                            <div class="out-control">
+                                <input type="checkbox" class="out-checkbox" ${isIn ? 'checked' : ''} onchange="togglePlayerIn('${name}')">
+                                <span>IN GAME</span>
+                            </div>
+                            <span class="addon-player-name">${name}</span>
+                        </div>
+                        <div class="addon-controls">
+                            <button class="minus-button" onclick="decrementAddon('${name}')">-</button>
+                            <span class="addon-count" id="count-${name}">${count}</span>
+                            <button class="plus-button" onclick="incrementAddon('${name}')">+</button>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            updateAddonSummary();
+        }
+
+        // Function to increment add-on for a player
+        function incrementAddon(name) {
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[]}');
+            if (!storageData.counts) storageData.counts = {};
+
+            storageData.counts[name] = (storageData.counts[name] || 0) + 1;
+            localStorage.setItem('pokerAddons', JSON.stringify(storageData));
+
+            document.getElementById(`count-${name}`).textContent = storageData.counts[name];
+            updateAddonSummary();
+        }
+
+        // Function to decrement add-on for a player
+        function decrementAddon(name) {
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[]}');
+            if (!storageData.counts) storageData.counts = {};
+
+            if ((storageData.counts[name] || 0) > 0) {
+                storageData.counts[name] -= 1;
+                localStorage.setItem('pokerAddons', JSON.stringify(storageData));
+                document.getElementById(`count-${name}`).textContent = storageData.counts[name];
+                updateAddonSummary();
+            }
+        }
+
+        // Function to toggle player 'in/out' status
+        function togglePlayerIn(name) {
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[]}');
+            if (!storageData.out) storageData.out = [];
+
+            const index = storageData.out.indexOf(name);
+            if (index > -1) {
+                // If it was in the 'out' list, remove it (making it 'IN')
+                storageData.out.splice(index, 1);
+            } else {
+                // If it wasn't in the 'out' list, add it (making it 'OUT')
+                storageData.out.push(name);
+            }
+
+            localStorage.setItem('pokerAddons', JSON.stringify(storageData));
+            loadAddons(); // Reload to apply sorting
+        }
+
+        // Function to reset all add-ons
+        function resetAllAddons() {
+            if (confirm('Are you sure you want to reset all add-on counts and player statuses?')) {
+                const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{}');
+                localStorage.setItem('pokerAddons', JSON.stringify({
+                    "counts": {},
+                    "out": [],
+                    "buyin": 10,
+                    "manualPlayers": storageData.manualPlayers || []
+                }));
+                loadAddons();
+            }
+        }
+
+        // Function to add a new manual player
+        function addNewPlayer() {
+            const input = document.getElementById('new-player-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[], "buyin": 10, "manualPlayers": []}');
+            if (!storageData.manualPlayers) storageData.manualPlayers = [];
+
+            if (storageData.manualPlayers.includes(name)) {
+                alert('Player already exists!');
+                return;
+            }
+
+            storageData.manualPlayers.push(name);
+            localStorage.setItem('pokerAddons', JSON.stringify(storageData));
+            input.value = '';
+            loadAddons();
+        }
+
+        // Function to remove a manual player
+        function removeManualPlayer(name) {
+            if (!confirm(`Remove player "${name}" from this session?`)) return;
+
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[], "buyin": 10, "manualPlayers": []}');
+
+            // Remove from manualPlayers list
+            storageData.manualPlayers = (storageData.manualPlayers || []).filter(p => p !== name);
+
+            // Remove their addon count
+            if (storageData.counts) delete storageData.counts[name];
+
+            // Remove from out list
+            if (storageData.out) storageData.out = storageData.out.filter(p => p !== name);
+
+            localStorage.setItem('pokerAddons', JSON.stringify(storageData));
+            loadAddons();
+        }
+
+        // Gallery Data
+        const galleryImages = [
+            "WhatsApp Image 2026-02-25 at 09.50.59.jpeg",
+            "WhatsApp Image 2026-02-25 at 09.51.51.jpeg",
+            "WhatsApp Image 2026-02-25 at 09.52.40.jpeg",
+            "WhatsApp Image 2026-02-25 at 09.54.31.jpeg",
+            "WhatsApp Image 2026-02-25 at 09.59.19.jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.20.jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.24 (1).jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.24.jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.25.jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.26 (1).jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.26 (3).jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.26.jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.28.jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.29 (1).jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.29 (2).jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.29.jpeg",
+            "WhatsApp Image 2026-02-25 at 10.36.30.jpeg"
+        ];
+
+        let currentImageIndex = 0;
+
+        function loadGallery() {
+            const container = document.getElementById('gallery-grid');
+            if (!container) return;
+
+            container.innerHTML = galleryImages.map((img, index) => `
+                <div class="gallery-item" onclick="openImageModalByIndex(${index})">
+                    <img src="./gallery/${img}" alt="Gallery Image" loading="lazy">
+                </div>
+            `).join('');
+        }
+
+        function openImageModalByIndex(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('image-modal');
+            const expandedImage = document.getElementById('expanded-image');
+            expandedImage.src = `./gallery/${galleryImages[currentImageIndex]}`;
+            modal.style.display = 'flex';
+        }
+
+        function nextImage(event) {
+            if (event) event.stopPropagation();
+            currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+            const expandedImage = document.getElementById('expanded-image');
+            expandedImage.src = `./gallery/${galleryImages[currentImageIndex]}`;
+        }
+
+        function prevImage(event) {
+            if (event) event.stopPropagation();
+            currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+            const expandedImage = document.getElementById('expanded-image');
+            expandedImage.src = `./gallery/${galleryImages[currentImageIndex]}`;
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.style.display = 'none';
+        }
+
+        // Add keyboard navigation for the gallery modal
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('image-modal');
+            if (modal.style.display === 'flex') {
+                if (e.key === 'ArrowRight') nextImage();
+                if (e.key === 'ArrowLeft') prevImage();
+                if (e.key === 'Escape') closeImageModal();
+            }
+        });
+
+        // Function to update summary (Add-Ons, Pot, and Prizes)
+        function updateAddonSummary() {
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "buyin": 10}');
+            const addonData = storageData.counts || {};
+            const buyinValue = parseInt(document.getElementById('buyin-multiplier').value) || 10;
+            const totalAddons = Object.values(addonData).reduce((sum, val) => sum + val, 0);
+            const totalPot = totalAddons * buyinValue;
+
+            const firstPlace = Math.ceil((totalPot * 0.7) / 10) * 10;
+            const secondPlace = totalPot - firstPlace;
+
+            document.getElementById('summary-rayon').textContent = totalAddons;
+            document.getElementById('summary-pot').textContent = totalPot;
+            document.getElementById('summary-first').textContent = firstPlace;
+            document.getElementById('summary-second').textContent = secondPlace;
+        }
+
+        // Helper to save buyin and refresh
+        function saveAndRefreshAddons() {
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[], "buyin": 10}');
+            storageData.buyin = parseInt(document.getElementById('buyin-multiplier').value) || 10;
+            localStorage.setItem('pokerAddons', JSON.stringify(storageData));
+            updateAddonSummary();
+        }
+
+        // Function to switch tabs
+        function switchTab(tabId, tabElement) {
+            // If called without tabElement (on initial load), find it
+            if (!tabElement) {
+                tabElement = Array.from(document.querySelectorAll('.nav-tab'))
+                    .find(tab => tab.getAttribute('onclick').includes(`'${tabId}'`));
+            }
+
+            // Update tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            if (tabElement) tabElement.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            // Save to localStorage
+            localStorage.setItem('pokerActiveTab', tabId);
+
+            // Initial load for specific tabs if needed
+            if (tabId === 'gallery-tab') loadGallery();
+        }
+
+        // Timer and Blinds Logic
+        let timerInterval;
+        let timeLeft = 15 * 60;
+        const alarmSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer-display').textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    pauseTimer();
+                    alarmSound.play();
+                    alert("⏰ BLIND COUNTDOWN! ⏰");
+                }
+            }, 1000);
+            document.getElementById('timer-start').disabled = true;
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('timer-start').disabled = false;
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            const startMins = parseInt(document.getElementById('timer-start-minutes').value) || 15;
+            timeLeft = startMins * 60;
+            updateTimerDisplay();
+        }
+
+        function updateBlinds() {
+            const base = parseInt(document.getElementById('blind-base').value) || 0;
+            document.getElementById('sb-amount').textContent = base / 2;
+            document.getElementById('bb-amount').textContent = base;
+
+            // Save to localStorage
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{}');
+            storageData.blinds = base;
+            localStorage.setItem('pokerAddons', JSON.stringify(storageData));
+        }
+
+        function resetBlinds() {
+            if (confirm('Reset blinds to 50 / 25?')) {
+                document.getElementById('blind-base').value = 50;
+                updateBlinds();
+            }
+        }
+
+        function initBlinds() {
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{}');
+            const savedBlinds = storageData.blinds || 50;
+            document.getElementById('blind-base').value = savedBlinds;
+            updateBlinds();
+        }
+
+        function adjustBlinds(amount) {
+            const input = document.getElementById('blind-base');
+            const newVal = Math.max(0, (parseInt(input.value) || 0) + amount);
+            input.value = newVal;
+            updateBlinds();
+        }
+
+        // Load rankings and Hall of Fame when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRankings();
+            loadPlayers();
+            loadAddons();
+            loadHallOfFame();
+            loadGallery();
+            initBlinds();
+            resetTimer();
+
+            // Restore active tab
+            const lastTab = localStorage.getItem('pokerActiveTab') || 'ranking-tab';
+            switchTab(lastTab);
+        });
+    </script>
+</body>
+
+</html>
