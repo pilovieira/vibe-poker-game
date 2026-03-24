@@ -59,7 +59,7 @@ A dedicated space for the most rare and memorable hands in your group's history.
 - `index.html`: The core application hub containing all tabs and modals.
 - `ranking.css`: A comprehensive design system covering everything from standard layouts to mobile-specific micro-interactions.
 - `database.js`: The "Brain" of the app, storing historical rankings, Hall of Fame entries, and player metadata.
-- `gallery/`: A directory for storing and recalling your best poker night moments.
+
 
 ---
 
@@ -67,7 +67,7 @@ A dedicated space for the most rare and memorable hands in your group's history.
 
 1. **Clone the repository.**
 2. **Open `index.html`** in any modern web browser.
-3. **Pro Tip**: Run via a local server (e.g., `python3 -m http.server 8000`) to enable dynamic features like the gallery scanner.
+3. **Pro Tip**: Run via a local server (e.g., `python3 -m http.server 8000`) to enable dynamic features.
 
 ---
 

@@ -113,13 +113,7 @@
             </div>
         </div>
 
-        <!-- Gallery -->
-        <div id="gallery-tab" class="tab-content">
-            <h1>🖼️ Gallery 🖼️</h1>
-            <div class="gallery-grid" id="gallery-grid">
-                <!-- Dynamic content -->
-            </div>
-        </div>
+
     </div>
 
     <!-- Win Dates Modal -->
@@ -144,15 +138,7 @@
         </div>
     </div>
 
-    <!-- Image Modal -->
-    <div id="image-modal" class="modal" onclick="if(event.target === this) closeImageModal()">
-        <div class="modal-content image-modal-content">
-            <span class="close-button" onclick="closeImageModal()">&times;</span>
-            <button class="nav-button prev-button" onclick="prevImage(event)">&#10094;</button>
-            <img id="expanded-image" src="" alt="Expanded image">
-            <button class="nav-button next-button" onclick="nextImage(event)">&#10095;</button>
-        </div>
-    </div>
+
 
     <!-- Import database -->
     <script src="database.js"></script>
@@ -577,76 +563,7 @@
             loadAddons();
         }
 
-        // Gallery Data
-        const galleryImages = [
-            "WhatsApp Image 2026-02-25 at 09.50.59.jpeg",
-            "WhatsApp Image 2026-02-25 at 09.51.51.jpeg",
-            "WhatsApp Image 2026-02-25 at 09.52.40.jpeg",
-            "WhatsApp Image 2026-02-25 at 09.54.31.jpeg",
-            "WhatsApp Image 2026-02-25 at 09.59.19.jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.20.jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.24 (1).jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.24.jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.25.jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.26 (1).jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.26 (3).jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.26.jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.28.jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.29 (1).jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.29 (2).jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.29.jpeg",
-            "WhatsApp Image 2026-02-25 at 10.36.30.jpeg"
-        ];
 
-        let currentImageIndex = 0;
-
-        function loadGallery() {
-            const container = document.getElementById('gallery-grid');
-            if (!container) return;
-
-            container.innerHTML = galleryImages.map((img, index) => `
-                <div class="gallery-item" onclick="openImageModalByIndex(${index})">
-                    <img src="./gallery/${img}" alt="Gallery Image" loading="lazy">
-                </div>
-            `).join('');
-        }
-
-        function openImageModalByIndex(index) {
-            currentImageIndex = index;
-            const modal = document.getElementById('image-modal');
-            const expandedImage = document.getElementById('expanded-image');
-            expandedImage.src = `./gallery/${galleryImages[currentImageIndex]}`;
-            modal.style.display = 'flex';
-        }
-
-        function nextImage(event) {
-            if (event) event.stopPropagation();
-            currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
-            const expandedImage = document.getElementById('expanded-image');
-            expandedImage.src = `./gallery/${galleryImages[currentImageIndex]}`;
-        }
-
-        function prevImage(event) {
-            if (event) event.stopPropagation();
-            currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
-            const expandedImage = document.getElementById('expanded-image');
-            expandedImage.src = `./gallery/${galleryImages[currentImageIndex]}`;
-        }
-
-        function closeImageModal() {
-            const modal = document.getElementById('image-modal');
-            modal.style.display = 'none';
-        }
-
-        // Add keyboard navigation for the gallery modal
-        document.addEventListener('keydown', (e) => {
-            const modal = document.getElementById('image-modal');
-            if (modal.style.display === 'flex') {
-                if (e.key === 'ArrowRight') nextImage();
-                if (e.key === 'ArrowLeft') prevImage();
-                if (e.key === 'Escape') closeImageModal();
-            }
-        });
 
         // Function to update summary (Add-Ons, Pot, and Prizes)
         function updateAddonSummary() {
@@ -693,7 +610,7 @@
             localStorage.setItem('pokerActiveTab', tabId);
 
             // Initial load for specific tabs if needed
-            if (tabId === 'gallery-tab') loadGallery();
+
         }
 
 
@@ -736,7 +653,7 @@
             loadPlayers();
             loadAddons();
             loadHallOfFame();
-            loadGallery();
+
             initBlinds();
 
             // Restore active tab
