@@ -70,19 +70,7 @@
                     </div>
                 </div>
 
-                <!-- Timer Box -->
-                <div class="dashboard-box">
-                    <h3>🕒 Blind Countdown</h3>
-                    <span class="timer-display" id="timer-display">15:00</span>
-                    <div class="timer-controls">
-                        <button class="dash-btn btn-play" id="timer-start" onclick="startTimer()">▶ Play</button>
-                        <button class="dash-btn btn-pause" onclick="pauseTimer()">⏸ Pause</button>
-                        <button class="dash-btn btn-reset" onclick="resetTimer()">🔄 Reset</button>
-                    </div>
-                    <div class="timer-setting">
-                        Start at: <input type="number" id="timer-start-minutes" value="15" min="1" max="60"> min
-                    </div>
-                </div>
+
             </div>
 
             <div class="summary-bar">
@@ -708,45 +696,7 @@
             if (tabId === 'gallery-tab') loadGallery();
         }
 
-        // Timer and Blinds Logic
-        let timerInterval;
-        let timeLeft = 15 * 60;
-        const alarmSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            document.getElementById('timer-display').textContent =
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        function startTimer() {
-            if (timerInterval) return;
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    updateTimerDisplay();
-                } else {
-                    pauseTimer();
-                    alarmSound.play();
-                    alert("⏰ BLIND COUNTDOWN! ⏰");
-                }
-            }, 1000);
-            document.getElementById('timer-start').disabled = true;
-        }
-
-        function pauseTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            document.getElementById('timer-start').disabled = false;
-        }
-
-        function resetTimer() {
-            pauseTimer();
-            const startMins = parseInt(document.getElementById('timer-start-minutes').value) || 15;
-            timeLeft = startMins * 60;
-            updateTimerDisplay();
-        }
 
         function updateBlinds() {
             const base = parseInt(document.getElementById('blind-base').value) || 0;
@@ -788,7 +738,6 @@
             loadHallOfFame();
             loadGallery();
             initBlinds();
-            resetTimer();
 
             // Restore active tab
             const lastTab = localStorage.getItem('pokerActiveTab') || 'ranking-tab';

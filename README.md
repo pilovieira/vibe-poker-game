@@ -8,7 +8,7 @@
 
 ---
 
-A premium, mobile-responsive web application designed to manage, track, and celebrate your poker nights. From live blind countdowns to all-time rankings, this app is the ultimate companion for your home games.
+A premium, mobile-responsive web application designed to manage, track, and celebrate your poker nights. From live blinds to all-time rankings, this app is the ultimate companion for your home games.
 
 ![Aesthetic](https://img.shields.io/badge/Design-Premium-gold)
 ![Status](https://img.shields.io/badge/Status-Live-success)
@@ -32,7 +32,7 @@ Experience a professional leaderboard system that tracks dominance across the ye
 
 ### 🃏 The "Game" Dashboard
 The nerve center of your poker night:
-- **🕒 Blind Countdown**: A customizable timer that alerts the table when it's time for blind elevation.
+
 - **📢 Live Blinds**: Instant display of Small Blind and Big Blind values based on a selectable base.
 - **💰 Prize Calculator**: 
     - Real-time calculation of the **Total Pot** based on Add-ons and Buy-in multiplier.
@@ -49,7 +49,7 @@ A dedicated space for the most rare and memorable hands in your group's history.
 - **Frontend**: Pure HTML5, CSS3 (Vanilla), and Modern JavaScript (ES6+).
 - **Aesthetics**: Custom-designed "Poker Felt" theme with glassmorphism effects and vibrant gradients.
 - **Responsive**: Mobile-first design. On small screens, the navbar collapses into an icon-only mode with tiny page labels for maximum space.
-- **Persistence**: All live game data (timer, blinds, add-ons, guest players) is persisted in `localStorage`. You can refresh the page or return later without losing your session.
+- **Persistence**: All live game data (blinds, add-ons, guest players) is persisted in `localStorage`. You can refresh the page or return later without losing your session.
 - **Data Engine**: Centralized data management via `database.js` for easy updates to history and player avatars.
 
 ---

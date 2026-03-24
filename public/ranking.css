@@ -564,9 +564,9 @@ h1 {
 /* Dashboard Styles for Game */
 .dashboard-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 25px;
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin: 0 auto 25px auto;
 }
 
 @media (max-width: 768px) {
@@ -584,19 +584,6 @@ h1 {
     border: 2px solid #1a7a42;
 }
 
-.timer-display {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 3.5em;
-    font-weight: bold;
-    color: #1a7a42;
-    margin-bottom: 10px;
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 8px;
-    display: block;
-}
-
-.timer-controls,
 .blind-controls {
     display: flex;
     justify-content: center;
@@ -618,27 +605,14 @@ h1 {
     color: white;
 }
 
-.btn-pause {
-    background: #fbc02d;
-    color: #333;
-}
+
 
 .btn-reset {
     background: #c62828;
     color: white;
 }
 
-.timer-setting {
-    margin-top: 15px;
-    font-size: 0.9em;
-    color: #666;
-}
 
-.timer-setting input {
-    width: 50px;
-    padding: 3px;
-    text-align: center;
-}
 
 .blind-values {
     display: grid;
