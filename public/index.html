@@ -131,6 +131,7 @@
         <div class="modal-content">
             <span class="close-button" onclick="closeModal()">&times;</span>
             <div class="modal-header">
+                <div id="modal-avatar-container"></div>
                 <h2 id="modal-person-name"></h2>
                 <p class="modal-year">Year: <span id="modal-year"></span></p>
             </div>
@@ -168,9 +169,15 @@
             const modalName = document.getElementById('modal-person-name');
             const modalYear = document.getElementById('modal-year');
             const datesList = document.getElementById('dates-list');
+            const avatarContainer = document.getElementById('modal-avatar-container');
 
             modalName.textContent = name;
             modalYear.textContent = year;
+
+            const avatarUrl = avatarsData[name];
+            avatarContainer.innerHTML = avatarUrl
+                ? `<div class="ranking-avatar" style="width: 140px; height: 140px; margin: 0 auto 15px auto;"><img src="${avatarUrl}" alt="${name}"></div>`
+                : `<div class="ranking-avatar" style="width: 140px; height: 140px; margin: 0 auto 15px auto; font-size: 4em;">👤</div>`;
 
             datesList.innerHTML = dates.map((date, index) => `
                 <li class="date-item">
