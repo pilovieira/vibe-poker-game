@@ -214,6 +214,33 @@ h1 {
     margin-bottom: 2px;
 }
 
+.ranking-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 15px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0e0e0;
+    flex-shrink: 0;
+}
+
+.ranking-avatar.small {
+    width: 35px;
+    height: 35px;
+    margin: 0 12px;
+}
+
+.ranking-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .trophies {
     display: flex;
     align-items: center;
@@ -269,7 +296,7 @@ h1 {
 }
 
 .global-item .person-info {
-    margin-left: 15px;
+    margin-left: 10px;
 }
 
 .global-item .trophies {
@@ -543,6 +570,14 @@ h1 {
 
     .trophies {
         justify-content: center;
+    }
+
+    .ranking-avatar {
+        margin: 10px 0;
+    }
+
+    .ranking-avatar.small {
+        margin: 10px 0;
     }
 
     .moments-grid {

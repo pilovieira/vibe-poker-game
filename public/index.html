@@ -260,9 +260,14 @@
                     <ul class="ranking-list">
                         ${rankings.map((person, index) => {
                 const rank = rankings.findIndex(p => p.wins === person.wins) + 1;
+                const avatarUrl = avatarsData[person.name];
+                const avatarDisplay = avatarUrl
+                    ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${person.name}"></div>`
+                    : `<div class="ranking-avatar small">👤</div>`;
                 return `
                             <li class="ranking-item ${getRankClass(rank)}" data-name="${person.name}" data-year="${year}" data-dates='${JSON.stringify(person.dates)}'>
                                 ${getRankDisplay(rank)}
+                                ${avatarDisplay}
                                 <div class="person-info">
                                     <div class="person-name">
                                         ${person.name}
@@ -317,9 +322,14 @@
                     <ul class="ranking-list global-list">
                         ${globalRankings.map((person, index) => {
                     const rank = globalRankings.findIndex(p => p.wins === person.wins) + 1;
+                    const avatarUrl = avatarsData[person.name];
+                    const avatarDisplay = avatarUrl
+                        ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${person.name}"></div>`
+                        : `<div class="ranking-avatar small">👤</div>`;
                     return `
                             <li class="ranking-item global-item ${getRankClass(rank)}" onclick="showPlayerModal('${person.name}')" style="cursor: pointer;">
                                 ${getRankDisplay(rank)}
+                                ${avatarDisplay}
                                 <div class="person-info">
                                     <div class="person-name">${person.name}</div>
                                     <div class="trophies">
