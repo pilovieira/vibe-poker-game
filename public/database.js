@@ -104,5 +104,5 @@ const avatarsData = {
     "Jafer": "./avatar/jafer.png",
     "Maykon": "./avatar/maykon.png",
     "Luan": "./avatar/luan.png",
-    // "Pedro": "./avatar/pedro.png"
+    "Pedro": "./avatar/pedro.png"
 };
