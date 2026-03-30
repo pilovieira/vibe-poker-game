@@ -835,6 +835,21 @@ h1 {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
+@media (max-width: 600px) {
+    .reset-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .copy-list-btn, .add-all-btn, .reset-button {
+        margin-right: 0;
+        width: 100%;
+        padding: 15px;
+    }
+}
+
 .addon-list {
     list-style: none;
     padding: 0;

@@ -102,7 +102,7 @@
             </div>
 
             <div class="reset-container">
-                <button class="copy-list-btn" onclick="copyPlayersList()">📋 Copy Players List</button>
+                <button class="copy-list-btn" onclick="sharePlayersList()">📋 Copy Players List</button>
                 <button class="add-all-btn" onclick="incrementAllActivePlayers()">➕ Add 1 for All In Game</button>
                 <button class="reset-button" onclick="resetAllAddons()">🔄 Reset All Counts</button>
             </div>
@@ -655,8 +655,8 @@
             loadAddons();
         }
 
-        // Function to copy player list to clipboard
-        function copyPlayersList() {
+        // Function to share or copy player list
+        function sharePlayersList() {
             const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[], "manualPlayers": []}');
             const addonData = storageData.counts || {};
             const outPlayers = storageData.out || [];
@@ -679,6 +679,18 @@
                 return;
             }
 
+            // If Web Share API is available (usually mobile)
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Poker Players List',
+                    text: listText
+                }).catch(err => {
+                    console.error('Share failed:', err);
+                });
+                return;
+            }
+
+            // Fallback to Clipboard (usually desktop)
             navigator.clipboard.writeText(listText).then(() => {
                 const btn = document.querySelector('.copy-list-btn');
                 const originalText = btn.innerHTML;
@@ -690,6 +702,14 @@
                 console.error('Failed to copy: ', err);
                 alert('Failed to copy to clipboard');
             });
+        }
+
+        // Update share button text if sharing is supported
+        function initShareButton() {
+            if (navigator.share) {
+                const btn = document.querySelector('.copy-list-btn');
+                if (btn) btn.innerHTML = '📤 Share Players List';
+            }
         }
 
 
@@ -803,6 +823,7 @@
 
             initBlinds();
             initGlobalAddon();
+            initShareButton();
 
             // Restore active tab
             const lastTab = localStorage.getItem('pokerActiveTab') || 'ranking-tab';
