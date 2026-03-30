@@ -102,6 +102,7 @@
             </div>
 
             <div class="reset-container">
+                <button class="copy-list-btn" onclick="copyPlayersList()">📋 Copy Players List</button>
                 <button class="add-all-btn" onclick="incrementAllActivePlayers()">➕ Add 1 for All In Game</button>
                 <button class="reset-button" onclick="resetAllAddons()">🔄 Reset All Counts</button>
             </div>
@@ -652,6 +653,43 @@
 
             localStorage.setItem('pokerAddons', JSON.stringify(storageData));
             loadAddons();
+        }
+
+        // Function to copy player list to clipboard
+        function copyPlayersList() {
+            const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[], "manualPlayers": []}');
+            const addonData = storageData.counts || {};
+            const outPlayers = storageData.out || [];
+
+            const playerStats = getPlayerStats();
+            const playerNames = Object.keys(playerStats);
+            const manualPlayers = storageData.manualPlayers || [];
+            const allPlayerNames = Array.from(new Set([...playerNames, ...manualPlayers]));
+
+            const inGamePlayers = allPlayerNames
+                .filter(name => !outPlayers.includes(name))
+                .sort();
+
+            const listText = inGamePlayers
+                .map(name => `${name} ${addonData[name] || 0}`)
+                .join('\n');
+
+            if (!listText) {
+                alert('No players in game!');
+                return;
+            }
+
+            navigator.clipboard.writeText(listText).then(() => {
+                const btn = document.querySelector('.copy-list-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard');
+            });
         }
 
 

@@ -816,6 +816,25 @@ h1 {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
+.copy-list-btn {
+    background: #0277bd;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    margin-right: 10px;
+}
+
+.copy-list-btn:hover {
+    background: #01579b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
 .addon-list {
     list-style: none;
     padding: 0;
