@@ -376,18 +376,24 @@
             }
         }
 
-        // Function to load and display Hall of Fame
         function loadHallOfFame() {
             const hofList = document.getElementById('hof-list');
-            hofList.innerHTML = hallOfFameData.map(item => `
-                <li class="hof-item">
+            hofList.innerHTML = hallOfFameData.map(item => {
+                const avatarUrl = avatarsData[item.name];
+                const avatarDisplay = avatarUrl
+                    ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${item.name}"></div>`
+                    : `<div class="ranking-avatar small">👤</div>`;
+                return `
+                <li class="hof-item" onclick="showPlayerModal('${item.name}')" style="cursor: pointer;">
                     <div class="hof-info">
                         <span class="hof-date">${item.date}</span>
+                        ${avatarDisplay}
                         <span class="hof-name">${item.name}</span>
                         <span class="hof-hand">${item.hand}</span>
                     </div>
                 </li>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // Function to load and display Players
