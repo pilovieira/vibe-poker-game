@@ -148,12 +148,15 @@ h1 {
 }
 
 .year-header {
-    font-size: 2em;
-    color: #1a7a42;
+    font-size: 2.2em;
+    color: #0b2e1b;
+    font-weight: 800;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #1a7a42;
+    border-bottom: 3px solid #0b2e1b;
     text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .ranking-list {
@@ -395,8 +398,21 @@ h1 {
 }
 
 .hof-list {
-    list-style: none;
     padding: 0;
+}
+
+.hof-section-header {
+    color: #0b2e1b;
+    font-size: 1.6em;
+    font-weight: 900;
+    margin: 35px 0 18px 5px;
+    padding-bottom: 6px;
+    border-bottom: 3px solid #0b2e1b;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .hof-item {
@@ -1014,6 +1030,13 @@ h1 {
     .hof-info {
         flex-direction: column;
         gap: 8px;
+    }
+
+    .hof-section-header {
+        font-size: 1.25em;
+        margin: 25px 0 10px 0;
+        text-align: center;
+        border-bottom-width: 1px;
     }
 
     .hof-date {
