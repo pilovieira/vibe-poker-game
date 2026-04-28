@@ -140,6 +140,18 @@
         </div>
     </div>
 
+    <!-- Year History Modal -->
+    <div id="year-history-modal" class="modal" onclick="if(event.target === this) closeHistoryModal()">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeHistoryModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="history-modal-title"></h2>
+                <p class="modal-year">Full Winners List</p>
+            </div>
+            <ul id="history-dates-list"></ul>
+        </div>
+    </div>
+
     <!-- Player Details Modal -->
     <div id="player-modal" class="modal" onclick="if(event.target === this) closePlayerModal()">
         <div class="modal-content">
@@ -193,6 +205,56 @@
         // Function to close modal
         function closeModal() {
             const modal = document.getElementById('win-dates-modal');
+            modal.style.display = 'none';
+        }
+
+        // Function to show year winners history
+        function showYearHistory(year) {
+            const modal = document.getElementById('year-history-modal');
+            const modalTitle = document.getElementById('history-modal-title');
+            const datesList = document.getElementById('history-dates-list');
+
+            modalTitle.textContent = `🏆 ${year} History`;
+
+            // Collect all dates from all players in that year
+            const winners = [];
+            rankingsData[year].forEach(player => {
+                if (player.dates && player.dates.length > 0) {
+                    player.dates.forEach(date => {
+                        winners.push({ name: player.name, date: date });
+                    });
+                }
+            });
+
+            // Sort by date (DD/MM/YYYY)
+            winners.sort((a, b) => {
+                const dateA = a.date.split('/').reverse().join('');
+                const dateB = b.date.split('/').reverse().join('');
+                return dateA.localeCompare(dateB);
+            });
+
+            datesList.innerHTML = winners.map((winner, index) => {
+                const avatarUrl = avatarsData[winner.name];
+                const avatarDisplay = avatarUrl
+                    ? `<div class="ranking-avatar small" style="width: 30px; height: 30px; margin: 0 10px 0 0;"><img src="${avatarUrl}" alt="${winner.name}"></div>`
+                    : `<div class="ranking-avatar small" style="width: 30px; height: 30px; margin: 0 10px 0 0; font-size: 1.2em;">👤</div>`;
+
+                return `
+                <li class="date-item">
+                    <span class="date-number">#${index + 1}</span>
+                    <div style="display: flex; align-items: center; flex: 1;">
+                        ${avatarDisplay}
+                        <span class="date-value"><strong>${winner.name}</strong> - ${formatDate(winner.date)}</span>
+                    </div>
+                </li>
+            `}).join('');
+
+            modal.style.display = 'flex';
+        }
+
+        // Function to close history modal
+        function closeHistoryModal() {
+            const modal = document.getElementById('year-history-modal');
             modal.style.display = 'none';
         }
 
@@ -262,9 +324,17 @@
 
         // Function to create ranking HTML for a year
         function createYearSection(year, rankings) {
+            const hasDates = rankings.some(p => p.dates && p.dates.length > 0);
+            const historyBtn = hasDates 
+                ? `<button class="year-history-btn" onclick="showYearHistory('${year}')" title="Show all winners">📜 History</button>`
+                : '';
+
             return `
                 <div class="year-section">
-                    <h2 class="year-header">${year}</h2>
+                    <div class="year-header-container">
+                        <h2 class="year-header">${year}</h2>
+                        ${historyBtn}
+                    </div>
                     <ul class="ranking-list">
                         ${rankings.map((person, index) => {
                 const rank = rankings.findIndex(p => p.wins === person.wins) + 1;
@@ -273,7 +343,7 @@
                     ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${person.name}"></div>`
                     : `<div class="ranking-avatar small">👤</div>`;
                 return `
-                            <li class="ranking-item ${getRankClass(rank)}" data-name="${person.name}" data-year="${year}" data-dates='${JSON.stringify(person.dates)}'>
+                            <li class="ranking-item ${getRankClass(rank)}" data-name="${person.name}" data-year="${year}" data-dates='${JSON.stringify(person.dates || [])}'>
                                 ${getRankDisplay(rank)}
                                 ${avatarDisplay}
                                 <div class="person-info">

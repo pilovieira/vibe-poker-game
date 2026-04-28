@@ -159,6 +159,44 @@ h1 {
     letter-spacing: 2px;
 }
 
+.year-header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.year-history-btn {
+    position: absolute;
+    right: 0;
+    top: 5px;
+    background: #1a7a42;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.year-history-btn:hover {
+    background: #145c32;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 768px) {
+    .year-history-btn {
+        padding: 4px 8px;
+        font-size: 0.7em;
+        top: 0;
+    }
+}
+
 .ranking-list {
     list-style: none;
 }
