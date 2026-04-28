@@ -1,10 +1,10 @@
 const rankingsData = {
     "2026": [
         { "name": "Alex", "wins": 2, "dates": ["23/03/2026", "13/04/2026"] },
+        { "name": "Ramao", "wins": 2, "dates": ["09/03/2026", "27/04/2026"] },
         { "name": "Pedro", "wins": 1, "dates": ["19/01/2026"] },
         { "name": "Galende", "wins": 1, "dates": ["02/02/2026"] },
-        { "name": "Bille", "wins": 1, "dates": ["23/02/2026"] },
-        { "name": "Ramao", "wins": 1, "dates": ["09/03/2026"] }
+        { "name": "Bille", "wins": 1, "dates": ["23/02/2026"] }
     ],
     "2025": [
         { "name": "Paulinho", "wins": 4 },
