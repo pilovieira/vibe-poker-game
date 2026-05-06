@@ -385,7 +385,6 @@
                 const globalContainer = document.getElementById('global-rankings-container');
                 const globalStats = {};
                 Object.entries(rankingsData).forEach(([year, yearRankings]) => {
-                    if (year === "2000") return;
                     yearRankings.forEach(player => {
                         if (!globalStats[player.name]) globalStats[player.name] = 0;
                         globalStats[player.name] += player.wins;
