@@ -428,7 +428,10 @@
                 // Generate HTML for visible years
                 let html = '';
                 years.forEach(year => {
-                    html += createYearSection(year, rankingsData[year]);
+                    const activeRankings = rankingsData[year].filter(p => p.wins > 0);
+                    if (activeRankings.length > 0) {
+                        html += createYearSection(year, activeRankings);
+                    }
                 });
 
                 container.innerHTML = html;
