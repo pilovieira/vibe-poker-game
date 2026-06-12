@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker - Admin Panel</title>
+    <link rel="stylesheet" href="ranking.css">
+    <style>
+        /* Admin-specific overrides and styling */
+        .admin-subnav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .subnav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        .subnav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .subnav-btn.active {
+            background: #ffd700;
+            color: #0b2e1b;
+            border-color: #ffd700;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .admin-card h2 {
+            color: #0b2e1b;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1a7a42;
+            padding-bottom: 8px;
+            font-size: 1.8em;
+        }
+
+        /* Form styling */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            background: #fff;
+            color: #333;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #1a7a42;
+        }
+
+        .btn-submit {
+            background: #1a7a42;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-submit:hover {
+            background: #145c32;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Tables & Lists */
+        .admin-table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            vertical-align: middle;
+        }
+
+        .admin-table th {
+            background: #f4f6f9;
+            color: #495057;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-table tr:hover {
+            background: rgba(26, 122, 66, 0.05);
+        }
+
+        .btn-delete {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #b71c1c;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .player-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border: 1.5px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .player-list-item:hover {
+            border-color: #1a7a42;
+            transform: translateX(4px);
+        }
+
+        .player-info-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div id="nav-ranking" class="nav-tab" onclick="window.location.href='index.html'">🏆 <span
+                class="tab-text">Ranking</span></div>
+        <div id="nav-players" class="nav-tab" onclick="window.location.href='index.html?tab=players-tab'">👥 <span
+                class="tab-text">Players</span></div>
+        <div id="nav-addons" class="nav-tab" onclick="window.location.href='index.html?tab=addons-tab'">🃏 <span
+                class="tab-text">Game</span></div>
+        <div id="nav-hof" class="nav-tab" onclick="window.location.href='index.html?tab=hof-tab'">⭐ <span class="tab-text">Hall of
+                Fame</span></div>
+        <div id="nav-admin" class="nav-tab active" onclick="void(0)">⚙️ <span
+                class="tab-text">Admin</span></div>
+    </nav>
+
+    <div class="container">
+        <h1>⚙️ Admin Dashboard ⚙️</h1>
+
+        <div class="admin-subnav">
+            <button id="btn-tab-players" class="subnav-btn active" onclick="switchAdminTab('tab-players')">👥 Players Manager</button>
+            <button id="btn-tab-games" class="subnav-btn" onclick="switchAdminTab('tab-games')">🃏 Games Manager</button>
+            <button id="btn-tab-hof" class="subnav-btn" onclick="switchAdminTab('tab-hof')">⭐ Hall of Fame Manager</button>
+        </div>
+
+        <div id="alert-msg" class="alert"></div>
+
+        <!-- 1. Players Manager Tab -->
+        <div id="tab-players" class="tab-content active">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <!-- Add Player Form -->
+                <div class="admin-card">
+                    <h2>➕ Add Player</h2>
+                    <form id="add-player-form" onsubmit="handleAddPlayer(event)">
+                        <div class="form-group">
+                            <label for="player-name">Player Name</label>
+                            <input type="text" id="player-name" class="form-control" placeholder="Enter full name..." required>
+                        </div>
+                        <button type="submit" class="btn-submit">Add Player</button>
+                    </form>
+                </div>
+
+                <!-- Players List -->
+                <div class="admin-card">
+                    <h2>👥 Registered Players</h2>
+                    <div id="players-list-container" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                        <!-- Dynamic list -->
+                        <div class="loading" style="color: #333; font-size: 1.1em; padding: 20px;">Loading players...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Games Manager Tab -->
+        <div id="tab-games" class="tab-content">
+            <!-- Add Game Form -->
+            <div class="admin-card">
+                <h2>➕ Register Game</h2>
+                <form id="add-game-form" onsubmit="handleAddGame(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label for="game-date">Game Date</label>
+                            <input type="text" id="game-date" class="form-control" placeholder="DD/MM/YYYY" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="game-winner1">🥇 1st Place Winner</label>
+                            <select id="game-winner1" class="form-control" required>
+                                <option value="">Select winner...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="game-winner2">🥈 2nd Place (Optional)</label>
+                            <select id="game-winner2" class="form-control">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit" style="margin-top: 10px;">Save Game Result</button>
+                </form>
+            </div>
+
+            <!-- Games History Table -->
+            <div class="admin-card">
+                <h2>📜 Games History</h2>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th># ID</th>
+                                <th>Date</th>
+                                <th>🥇 1st Winner</th>
+                                <th>🥈 2nd Winner</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="games-table-body">
+                            <!-- Dynamic content -->
+                            <tr>
+                                <td colspan="5" class="loading" style="color: #333; font-size: 1.1em; padding: 20px; text-align: center;">Loading games...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Hall of Fame Manager Tab -->
+        <div id="tab-hof" class="tab-content">
+            <!-- Add Hall of Fame Entry Form -->
+            <div class="admin-card">
+                <h2>➕ Add Hall of Fame Entry</h2>
+                <form id="add-hof-form" onsubmit="handleAddHof(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label for="hof-date">Date</label>
+                            <input type="text" id="hof-date" class="form-control" placeholder="DD/MM/YYYY" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hof-player">Player</label>
+                            <select id="hof-player" class="form-control" required>
+                                <option value="">Select player...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="hof-hand">Hand Description</label>
+                            <input type="text" id="hof-hand" class="form-control" placeholder="e.g. A♦️A♠️A♥️A♣️" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit" style="margin-top: 10px;">Save Hall of Fame Entry</button>
+                </form>
+            </div>
+
+            <!-- Hall of Fame Entries Table -->
+            <div class="admin-card">
+                <h2>⭐ Hall of Fame Records</h2>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th># ID</th>
+                                <th>Date</th>
+                                <th>Player</th>
+                                <th>Hand</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hof-table-body">
+                            <!-- Dynamic content -->
+                            <tr>
+                                <td colspan="5" class="loading" style="color: #333; font-size: 1.1em; padding: 20px; text-align: center;">Loading Hall of Fame records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Need to fetch dynamic database.js to read static avatar mappings -->
+    <script src="database.js"></script>
+
+    <script>
+        // Set today's date formatted as DD/MM/YYYY to form inputs helper
+        function getTodayFormatted() {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+            const yyyy = today.getFullYear();
+            return `${dd}/${mm}/${yyyy}`;
+        }
+
+        // Initialize default dates
+        document.getElementById('game-date').value = getTodayFormatted();
+        document.getElementById('hof-date').value = getTodayFormatted();
+
+        // Local State
+        let players = [];
+        let games = [];
+        let hofEntries = [];
+
+        // Tab Switcher for Admin Subtabs
+        function switchAdminTab(tabId) {
+            // Remove active classes
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.subnav-btn').forEach(el => el.classList.remove('active'));
+
+            // Add active classes
+            document.getElementById(tabId).classList.add('active');
+            
+            const btnId = 'btn-' + tabId;
+            document.getElementById(btnId).classList.add('active');
+        }
+
+        // Show feedback message
+        function showMsg(message, isSuccess = true) {
+            const alertEl = document.getElementById('alert-msg');
+            alertEl.textContent = message;
+            alertEl.style.display = 'block';
+            alertEl.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setTimeout(() => {
+                alertEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // API Requests
+        async function fetchPlayers() {
+            try {
+                const res = await fetch('/api/players');
+                players = await res.json();
+                renderPlayers();
+                populateDropdowns();
+            } catch (err) {
+                console.error(err);
+                showMsg('Error fetching players list.', false);
+            }
+        }
+
+        async function fetchGames() {
+            try {
+                const res = await fetch('/api/games');
+                games = await res.json();
+                renderGames();
+            } catch (err) {
+                console.error(err);
+                showMsg('Error fetching games history.', false);
+            }
+        }
+
+        async function fetchHof() {
+            try {
+                const res = await fetch('/api/hof');
+                hofEntries = await res.json();
+                renderHof();
+            } catch (err) {
+                console.error(err);
+                showMsg('Error fetching Hall of Fame.', false);
+            }
+        }
+
+        // Render UI Elements
+        function renderPlayers() {
+            const container = document.getElementById('players-list-container');
+            if (players.length === 0) {
+                container.innerHTML = '<p style="color: #666; font-style: italic; padding: 10px;">No players registered.</p>';
+                return;
+            }
+
+            container.innerHTML = players.map(name => {
+                const avatarUrl = avatarsData[name];
+                const avatarHtml = avatarUrl 
+                    ? `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0;"><img src="${avatarUrl}" alt="${name}"></div>`
+                    : `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0; font-size: 0.9em;">👤</div>`;
+
+                return `
+                    <div class="player-list-item">
+                        <div class="player-info-container">
+                            ${avatarHtml}
+                            <span style="font-weight: bold; color: #333;">${name}</span>
+                        </div>
+                        <button class="btn-delete" onclick="handleDeletePlayer('${name}')">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateDropdowns() {
+            const w1Select = document.getElementById('game-winner1');
+            const w2Select = document.getElementById('game-winner2');
+            const hofSelect = document.getElementById('hof-player');
+
+            // Save currently selected values
+            const w1Val = w1Select.value;
+            const w2Val = w2Select.value;
+            const hofVal = hofSelect.value;
+
+            // Winner 1 options
+            w1Select.innerHTML = '<option value="">Select winner...</option>' + 
+                players.map(name => `<option value="${name}">${name}</option>`).join('');
+
+            // Winner 2 options
+            w2Select.innerHTML = '<option value="">None</option>' + 
+                players.map(name => `<option value="${name}">${name}</option>`).join('');
+
+            // Hall of Fame player options
+            hofSelect.innerHTML = '<option value="">Select player...</option>' + 
+                players.map(name => `<option value="${name}">${name}</option>`).join('');
+
+            // Restore selection if possible
+            if (players.includes(w1Val)) w1Select.value = w1Val;
+            if (players.includes(w2Val)) w2Select.value = w2Val;
+            if (players.includes(hofVal)) hofSelect.value = hofVal;
+        }
+
+        function renderGames() {
+            const tbody = document.getElementById('games-table-body');
+            if (games.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="color: #666; font-style: italic; text-align: center;">No games recorded.</td></tr>';
+                return;
+            }
+
+            // Render descending ID (latest games at top)
+            const displayGames = [...games].reverse();
+
+            tbody.innerHTML = displayGames.map(game => {
+                const w1Avatar = avatarsData[game.winner1];
+                const w2Avatar = game.winner2 ? avatarsData[game.winner2] : null;
+
+                const w1Display = w1Avatar 
+                    ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w1Avatar}" alt="${game.winner1}"></div><strong>${game.winner1}</strong></div>`
+                    : `<strong>${game.winner1}</strong>`;
+
+                const w2Display = game.winner2 
+                    ? (w2Avatar 
+                        ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w2Avatar}" alt="${game.winner2}"></div>${game.winner2}</div>`
+                        : game.winner2)
+                    : '<span style="color: #999;">-</span>';
+
+                return `
+                    <tr>
+                        <td style="font-weight: bold; color: #666;">#${game.id}</td>
+                        <td style="font-weight: bold;">${game.date}</td>
+                        <td>${w1Display}</td>
+                        <td>${w2Display}</td>
+                        <td><button class="btn-delete" onclick="handleDeleteGame('${game.id}')">Delete</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderHof() {
+            const tbody = document.getElementById('hof-table-body');
+            if (hofEntries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="color: #666; font-style: italic; text-align: center;">No Hall of Fame records.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = hofEntries.map(entry => {
+                const playerAvatar = avatarsData[entry.name];
+                const playerDisplay = playerAvatar 
+                    ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${playerAvatar}" alt="${entry.name}"></div><strong>${entry.name}</strong></div>`
+                    : `<strong>${entry.name}</strong>`;
+
+                return `
+                    <tr>
+                        <td style="font-weight: bold; color: #666;">#${entry.id}</td>
+                        <td style="font-weight: bold;">${entry.date}</td>
+                        <td>${playerDisplay}</td>
+                        <td><span class="hof-hand" style="margin: 0; font-size: 0.9em; padding: 4px 10px;">${entry.hand}</span></td>
+                        <td><button class="btn-delete" onclick="handleDeleteHof('${entry.id}')">Delete</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Handle Add operations
+        async function handleAddPlayer(event) {
+            event.preventDefault();
+            const input = document.getElementById('player-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            try {
+                const res = await fetch('/api/players', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Failed to add player.');
+                }
+
+                showMsg(`Player "${name}" added successfully!`);
+                input.value = '';
+                await fetchPlayers();
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        async function handleAddGame(event) {
+            event.preventDefault();
+            const date = document.getElementById('game-date').value.trim();
+            const winner1 = document.getElementById('game-winner1').value;
+            const winner2 = document.getElementById('game-winner2').value;
+
+            if (!date || !winner1) return;
+
+            if (winner1 === winner2) {
+                showMsg('The 1st place and 2nd place winner cannot be the same person!', false);
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/games', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date, winner1, winner2 })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Failed to register game.');
+                }
+
+                showMsg('Game results saved successfully!');
+                
+                // Reset form fields except date
+                document.getElementById('game-winner1').value = '';
+                document.getElementById('game-winner2').value = '';
+                
+                await fetchGames();
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        async function handleAddHof(event) {
+            event.preventDefault();
+            const date = document.getElementById('hof-date').value.trim();
+            const name = document.getElementById('hof-player').value;
+            const hand = document.getElementById('hof-hand').value.trim();
+
+            if (!date || !name || !hand) return;
+
+            try {
+                const res = await fetch('/api/hof', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date, name, hand })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Failed to register Hall of Fame entry.');
+                }
+
+                showMsg('Hall of Fame record saved successfully!');
+                
+                // Reset form fields except date
+                document.getElementById('hof-player').value = '';
+                document.getElementById('hof-hand').value = '';
+
+                await fetchHof();
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        // Handle Delete operations
+        async function handleDeletePlayer(name) {
+            if (!confirm(`Are you sure you want to delete player "${name}"? This will remove their registration and avatar mappings (historical game stats will not be deleted).`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/players/${encodeURIComponent(name)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Failed to delete player.');
+                }
+
+                showMsg(`Player "${name}" deleted.`);
+                await fetchPlayers();
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        async function handleDeleteGame(id) {
+            if (!confirm(`Are you sure you want to delete Game #${id}?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/games/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Failed to delete game record.');
+                }
+
+                showMsg(`Game #${id} deleted.`);
+                await fetchGames();
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        async function handleDeleteHof(id) {
+            if (!confirm('Are you sure you want to delete this Hall of Fame record?')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/hof/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Failed to delete Hall of Fame entry.');
+                }
+
+                showMsg('Hall of Fame record deleted.');
+                await fetchHof();
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchPlayers();
+            await fetchGames();
+            await fetchHof();
+        });
+    </script>
+</body>
+
+</html>
