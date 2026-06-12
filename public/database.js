@@ -5,7 +5,9 @@ const rankingsData = {
         { "name": "Galende", "wins": 2, "dates": ["02/02/2026", "25/05/2026"] },
         { "name": "Pedro", "wins": 1, "dates": ["19/01/2026"] },
         { "name": "Bille", "wins": 1, "dates": ["23/02/2026"] },
-        { "name": "Rodrigo", "wins": 0, "sec": ["25/05/2026"] }
+        { "name": "Maiko", "wins": 1, "dates": ["08/06/2026"] },
+        { "name": "Rodrigo", "wins": 0, "sec": ["25/05/2026"] },
+        { "name": "Almir", "wins": 0, "sec": ["08/06/2026"] }
     ],
     "2025": [
         { "name": "Paulinho", "wins": 4 },
@@ -39,7 +41,8 @@ const rankingsData = {
     "2000": [
         { "name": "Luan", "wins": 0 },
         { "name": "Rodrigo", "wins": 0 },
-        { "name": "Jardel", "wins": 0 }
+        { "name": "Jardel", "wins": 0 },
+        { "name": "Almir", "wins": 0 }
     ]
 };
 
