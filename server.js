@@ -60,6 +60,19 @@ async function startServer() {
           }
         });
 
+        // Ensure every registered player is in the rankings of the latest active year
+        // so they are processed by getPlayerStats() on the client and show up in the Players tab
+        const years = Object.keys(rankingsData);
+        if (years.length > 0) {
+          const latestYear = years.sort((a, b) => b - a)[0];
+          players.forEach(name => {
+            let pRecord = rankingsData[latestYear].find(p => p.name === name);
+            if (!pRecord) {
+              rankingsData[latestYear].push({ name, wins: 0, dates: [], sec: [] });
+            }
+          });
+        }
+
         // Ensure every player in the list for a year is formatted correctly
         Object.keys(rankingsData).forEach(year => {
           rankingsData[year].forEach(p => {
