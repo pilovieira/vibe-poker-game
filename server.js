@@ -97,7 +97,17 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    // 2. API: Players management
+    // 2. API: Avatars (read-only)
+    app.get('/api/avatars', async (req, res) => {
+      try {
+        const avatars = JSON.parse(await client.get('vibe-poker:avatars') || '{}');
+        res.json(avatars);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // 3. API: Players management
     app.get('/api/players', async (req, res) => {
       try {
         const players = JSON.parse(await client.get('vibe-poker:players') || '[]');

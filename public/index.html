@@ -166,9 +166,6 @@
 
 
 
-    <!-- Import database -->
-    <script src="database.js"></script>
-
     <script>
         // Function to format date
         function formatDate(dateString) {
@@ -940,13 +937,98 @@
             updateBlinds();
         }
 
-        // Load rankings and Hall of Fame when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            loadRankings();
-            loadPlayers();
-            loadAddons();
-            loadHallOfFame();
+        // ── Data layer: fetch from Redis via REST API ──────────────────────────
 
+        // These module-level variables are populated by initData() before any render
+        let rankingsData = {};
+        let hallOfFameData = [];
+        let avatarsData = {};
+
+        /**
+         * Compile rankingsData from a flat list of game records.
+         * Each game: { date: "DD/MM/YYYY", winner1: name, winner2: name|null }
+         */
+        function buildRankingsFromGames(games) {
+            const result = {};
+
+            games.forEach(game => {
+                if (!game.date) return;
+                const parts = game.date.split('/');
+                if (parts.length < 3) return;
+                const year = parts[2];
+
+                if (!result[year]) result[year] = [];
+
+                if (game.winner1) {
+                    let p = result[year].find(r => r.name === game.winner1);
+                    if (!p) { p = { name: game.winner1, wins: 0, dates: [], sec: [] }; result[year].push(p); }
+                    p.wins += 1;
+                    p.dates.push(game.date);
+                }
+
+                if (game.winner2) {
+                    let p = result[year].find(r => r.name === game.winner2);
+                    if (!p) { p = { name: game.winner2, wins: 0, dates: [], sec: [] }; result[year].push(p); }
+                    p.sec.push(game.date);
+                }
+            });
+
+            // Sort each year's list by wins descending
+            Object.keys(result).forEach(yr => {
+                result[yr].sort((a, b) => b.wins - a.wins);
+            });
+
+            return result;
+        }
+
+        /**
+         * Fetch all data from the Redis-backed REST APIs, populate the global
+         * variables, and then render everything.
+         */
+        async function initData() {
+            try {
+                const [gamesRes, hofRes, avatarsRes, playersRes] = await Promise.all([
+                    fetch('/api/games'),
+                    fetch('/api/hof'),
+                    fetch('/api/avatars'),
+                    fetch('/api/players')
+                ]);
+
+                const games   = gamesRes.ok   ? await gamesRes.json()   : [];
+                hallOfFameData = hofRes.ok     ? await hofRes.json()     : [];
+                avatarsData    = avatarsRes.ok  ? await avatarsRes.json() : {};
+                const players  = playersRes.ok  ? await playersRes.json() : [];
+
+                // Build rankingsData from games
+                rankingsData = buildRankingsFromGames(games);
+
+                // Make sure every registered player appears in the latest year
+                // so they show up in the Players tab even with 0 wins
+                const years = Object.keys(rankingsData).sort((a, b) => b - a);
+                if (years.length > 0) {
+                    const latestYear = years[0];
+                    players.forEach(name => {
+                        if (!rankingsData[latestYear].find(p => p.name === name)) {
+                            rankingsData[latestYear].push({ name, wins: 0, dates: [], sec: [] });
+                        }
+                    });
+                }
+
+                // Render all sections
+                loadRankings();
+                loadPlayers();
+                loadAddons();
+                loadHallOfFame();
+
+            } catch (err) {
+                console.error('Failed to load data from server:', err);
+                document.getElementById('rankings-container').innerHTML =
+                    `<div class="error"><h2>⚠️ Cannot connect to server</h2><p>Make sure the Node.js server is running: <code>npm start</code></p></div>`;
+            }
+        }
+
+        // Load rankings and Hall of Fame when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
             initBlinds();
             initGlobalAddon();
             initShareButton();
@@ -954,6 +1036,9 @@
             // Restore active tab
             const lastTab = localStorage.getItem('pokerActiveTab') || 'ranking-tab';
             switchTab(lastTab);
+
+            // Fetch data from Redis and render
+            await initData();
         });
     </script>
 </body>
