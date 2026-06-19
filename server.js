@@ -1,6 +1,9 @@
+const dotenv = require('dotenv');
 const express = require('express');
 const path = require('path');
 const { createClient } = require('redis');
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3100;
