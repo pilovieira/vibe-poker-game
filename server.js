@@ -1,11 +1,36 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { createClient } = require('redis');
+const { LRUCache } = require('lru-cache');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3100;
 
 app.use(express.json());
+
+// ---------------------------------------------------------------------------
+// Token Store: LRU cache — max 50 concurrent sessions, 10-minute TTL each
+// ---------------------------------------------------------------------------
+const tokenStore = new LRUCache({
+  max: 50,
+  ttl: 10 * 60 * 1000, // 10 minutes in milliseconds
+});
+
+// ---------------------------------------------------------------------------
+// Auth Middleware
+// ---------------------------------------------------------------------------
+function requireAdminAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (!token || !tokenStore.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized. Please log in again.' });
+  }
+
+  next();
+}
 
 // Initialize Redis Client
 const client = createClient();
@@ -16,7 +41,47 @@ async function startServer() {
     await client.connect();
     console.log('Connected to local Redis database.');
 
-    // 1. Dynamic database.js endpoint
+    // -------------------------------------------------------------------------
+    // AUTH: Login endpoint
+    // -------------------------------------------------------------------------
+    app.post('/api/admin/login', (req, res) => {
+      const { username, password } = req.body || {};
+
+      const expectedUser = process.env.ADMIN_USER;
+      const expectedPass = process.env.ADMIN_PASSWORD;
+
+      if (!expectedUser || !expectedPass) {
+        console.error('ADMIN_USER or ADMIN_PASSWORD not set in environment.');
+        return res.status(500).json({ error: 'Server misconfiguration.' });
+      }
+
+      // Constant-time comparison to prevent timing attacks
+      const userMatch =
+        username &&
+        crypto.timingSafeEqual(
+          Buffer.from(username),
+          Buffer.from(expectedUser)
+        );
+      const passMatch =
+        password &&
+        crypto.timingSafeEqual(
+          Buffer.from(password),
+          Buffer.from(expectedPass)
+        );
+
+      if (!userMatch || !passMatch) {
+        return res.status(401).json({ error: 'Invalid username or password.' });
+      }
+
+      const token = crypto.randomUUID();
+      tokenStore.set(token, { username, createdAt: Date.now() });
+
+      return res.json({ token });
+    });
+
+    // -------------------------------------------------------------------------
+    // 1. Dynamic database.js endpoint (public — read-only)
+    // -------------------------------------------------------------------------
     app.get('/database.js', async (req, res) => {
       try {
         const players = JSON.parse(await client.get('vibe-poker:players') || '[]');
@@ -61,7 +126,6 @@ async function startServer() {
         });
 
         // Ensure every registered player is in the rankings of the latest active year
-        // so they are processed by getPlayerStats() on the client and show up in the Players tab
         const years = Object.keys(rankingsData);
         if (years.length > 0) {
           const latestYear = years.sort((a, b) => b - a)[0];
@@ -79,7 +143,6 @@ async function startServer() {
             if (!p.dates) p.dates = [];
             if (!p.sec) p.sec = [];
           });
-          // Sort by wins descending
           rankingsData[year].sort((a, b) => b.wins - a.wins);
         });
 
@@ -97,7 +160,9 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    // 2. API: Avatars (read-only)
+    // -------------------------------------------------------------------------
+    // 2. API: Avatars (public — read-only)
+    // -------------------------------------------------------------------------
     app.get('/api/avatars', async (req, res) => {
       try {
         const avatars = JSON.parse(await client.get('vibe-poker:avatars') || '{}');
@@ -107,7 +172,9 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
+    // -------------------------------------------------------------------------
     // 3. API: Players management
+    // -------------------------------------------------------------------------
     app.get('/api/players', async (req, res) => {
       try {
         const players = JSON.parse(await client.get('vibe-poker:players') || '[]');
@@ -117,7 +184,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    app.post('/api/players', async (req, res) => {
+    app.post('/api/players', requireAdminAuth, async (req, res) => {
       try {
         const { name } = req.body;
         if (!name || name.trim() === '') {
@@ -140,7 +207,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    app.delete('/api/players/:name', async (req, res) => {
+    app.delete('/api/players/:name', requireAdminAuth, async (req, res) => {
       try {
         const { name } = req.params;
         let players = JSON.parse(await client.get('vibe-poker:players') || '[]');
@@ -152,7 +219,6 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
 
         await client.set('vibe-poker:players', JSON.stringify(filtered));
 
-        // Clean up avatars mapping if present
         const avatars = JSON.parse(await client.get('vibe-poker:avatars') || '{}');
         if (avatars[name]) {
           delete avatars[name];
@@ -165,7 +231,9 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    // 3. API: Games management
+    // -------------------------------------------------------------------------
+    // 4. API: Games management
+    // -------------------------------------------------------------------------
     app.get('/api/games', async (req, res) => {
       try {
         const games = JSON.parse(await client.get('vibe-poker:games') || '[]');
@@ -175,7 +243,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    app.post('/api/games', async (req, res) => {
+    app.post('/api/games', requireAdminAuth, async (req, res) => {
       try {
         const { date, winner1, winner2 } = req.body;
         if (!date || !winner1) {
@@ -188,8 +256,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
         }
 
         const games = JSON.parse(await client.get('vibe-poker:games') || '[]');
-        
-        // Generate new ID
+
         let maxId = 0;
         games.forEach(g => {
           const idNum = parseInt(g.id) || 0;
@@ -205,8 +272,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
         };
 
         games.push(newGame);
-        
-        // Sort games chronologically
+
         games.sort((a, b) => {
           const dateA = a.date.split('/').reverse().join('');
           const dateB = b.date.split('/').reverse().join('');
@@ -220,7 +286,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    app.delete('/api/games/:id', async (req, res) => {
+    app.delete('/api/games/:id', requireAdminAuth, async (req, res) => {
       try {
         const { id } = req.params;
         let games = JSON.parse(await client.get('vibe-poker:games') || '[]');
@@ -237,7 +303,9 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    // 4. API: Hall of Fame management
+    // -------------------------------------------------------------------------
+    // 5. API: Hall of Fame management
+    // -------------------------------------------------------------------------
     app.get('/api/hof', async (req, res) => {
       try {
         const hof = JSON.parse(await client.get('vibe-poker:hall_of_fame') || '[]');
@@ -247,7 +315,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    app.post('/api/hof', async (req, res) => {
+    app.post('/api/hof', requireAdminAuth, async (req, res) => {
       try {
         const { name, date, hand } = req.body;
         if (!name || !date || !hand) {
@@ -260,7 +328,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
         }
 
         const hof = JSON.parse(await client.get('vibe-poker:hall_of_fame') || '[]');
-        
+
         let maxId = 0;
         hof.forEach(h => {
           const idNum = parseInt(h.id) || 0;
@@ -268,17 +336,9 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
         });
         const newId = (maxId + 1).toString();
 
-        const newEntry = {
-          id: newId,
-          name,
-          date,
-          hand
-        };
-
+        const newEntry = { id: newId, name, date, hand };
         hof.push(newEntry);
-        
-        // Sort Hall of Fame entries chronologically descending (newest first) or ascending. 
-        // Original data lists latest on top, so we will sort descending.
+
         hof.sort((a, b) => {
           const dateA = a.date.split('/').reverse().join('');
           const dateB = b.date.split('/').reverse().join('');
@@ -292,7 +352,7 @@ const avatarsData = ${JSON.stringify(avatars, null, 2)};
       }
     });
 
-    app.delete('/api/hof/:id', async (req, res) => {
+    app.delete('/api/hof/:id', requireAdminAuth, async (req, res) => {
       try {
         const { id } = req.params;
         let hof = JSON.parse(await client.get('vibe-poker:hall_of_fame') || '[]');
