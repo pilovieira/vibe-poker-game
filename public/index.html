@@ -81,12 +81,12 @@
                 <div class="multiplier-container">
                     <label>Buy-in: R$</label>
                     <input type="number" id="buyin-multiplier" class="multiplier-input" value="10" min="1"
-                        onchange="saveAndRefreshAddons()">
+                       onchange="saveAndRefreshAddons()">
                     <div
                         style="margin-left: 15px; border-left: 1px solid #ccc; padding-left: 15px; display: flex; align-items: center; gap: 5px;">
                         <input type="checkbox" id="global-addon-toggle" onchange="saveAndRefreshAddons()">
                         <label for="global-addon-toggle"
-                            style="font-size: 0.9em; font-weight: bold; color: #555; cursor: pointer;">Add-On</label>
+                           style="font-size: 0.9em; font-weight: bold; color: #555; cursor: pointer;">Add-On</label>
                     </div>
                 </div>
                 <div class="summary-item">Rebuys: <span id="summary-rayon">0</span></div>
@@ -163,7 +163,6 @@
             </div>
         </div>
     </div>
-
 
 
     <script>
@@ -376,7 +375,7 @@
         // Function to create ranking HTML for a year
         function createYearSection(year, rankings) {
             const hasHistory = rankings.some(p => (p.dates && p.dates.length > 0) || (p.sec && p.sec.length > 0));
-            const historyBtn = hasHistory 
+            const historyBtn = hasHistory
                 ? `<button class="year-history-btn" onclick="showYearHistory('${year}')" title="Show all winners">📜 History</button>`
                 : '';
 
@@ -446,7 +445,7 @@
                 });
 
                 const globalRankings = Object.entries(globalStats)
-                    .map(([name, wins]) => ({ name, wins }))
+                    .map(([name, wins]) => ({name, wins}))
                     .sort((a, b) => b.wins - a.wins);
 
                 let globalHtml = `
@@ -588,7 +587,7 @@
             Object.values(rankingsData).forEach(yearRankings => {
                 yearRankings.forEach(player => {
                     if (!playerStats[player.name]) {
-                        playerStats[player.name] = { wins: 0, hof: 0 };
+                        playerStats[player.name] = {wins: 0, hof: 0};
                     }
                     playerStats[player.name].wins += player.wins;
                 });
@@ -597,7 +596,7 @@
             // Count Hall of Fame mentions
             hallOfFameData.forEach(item => {
                 if (!playerStats[item.name]) {
-                    playerStats[item.name] = { wins: 0, hof: 0 };
+                    playerStats[item.name] = {wins: 0, hof: 0};
                 }
                 playerStats[item.name].hof += 1;
             });
@@ -836,7 +835,6 @@
         }
 
 
-
         // Function to update summary (Add-Ons, Pot, and Prizes)
         function updateAddonSummary() {
             const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "buyin": 10, "out":[], "manualPlayers":[]}');
@@ -904,7 +902,6 @@
         }
 
 
-
         function updateBlinds() {
             const base = parseInt(document.getElementById('blind-base').value) || 0;
             document.getElementById('sb-amount').textContent = base / 2;
@@ -961,14 +958,20 @@
 
                 if (game.winner1) {
                     let p = result[year].find(r => r.name === game.winner1);
-                    if (!p) { p = { name: game.winner1, wins: 0, dates: [], sec: [] }; result[year].push(p); }
+                    if (!p) {
+                        p = {name: game.winner1, wins: 0, dates: [], sec: []};
+                        result[year].push(p);
+                    }
                     p.wins += 1;
                     p.dates.push(game.date);
                 }
 
                 if (game.winner2) {
                     let p = result[year].find(r => r.name === game.winner2);
-                    if (!p) { p = { name: game.winner2, wins: 0, dates: [], sec: [] }; result[year].push(p); }
+                    if (!p) {
+                        p = {name: game.winner2, wins: 0, dates: [], sec: []};
+                        result[year].push(p);
+                    }
                     p.sec.push(game.date);
                 }
             });
@@ -994,10 +997,10 @@
                     fetch('/api/players')
                 ]);
 
-                const games   = gamesRes.ok   ? await gamesRes.json()   : [];
-                hallOfFameData = hofRes.ok     ? await hofRes.json()     : [];
-                avatarsData    = avatarsRes.ok  ? await avatarsRes.json() : {};
-                const players  = playersRes.ok  ? await playersRes.json() : [];
+                const games = gamesRes.ok ? await gamesRes.json() : [];
+                hallOfFameData = hofRes.ok ? await hofRes.json() : [];
+                avatarsData = avatarsRes.ok ? await avatarsRes.json() : {};
+                const players = playersRes.ok ? await playersRes.json() : [];
 
                 // Build rankingsData from games
                 rankingsData = buildRankingsFromGames(games);
@@ -1009,7 +1012,7 @@
                     const latestYear = years[0];
                     players.forEach(name => {
                         if (!rankingsData[latestYear].find(p => p.name === name)) {
-                            rankingsData[latestYear].push({ name, wins: 0, dates: [], sec: [] });
+                            rankingsData[latestYear].push({name, wins: 0, dates: [], sec: []});
                         }
                     });
                 }

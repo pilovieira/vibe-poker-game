@@ -212,6 +212,8 @@
                 Fame</span></div>
         <div id="nav-admin" class="nav-tab active" onclick="void(0)">⚙️ <span
                 class="tab-text">Admin</span></div>
+        <div id="nav-logout" class="nav-tab" onclick="logout()">🚪 <span
+                class="tab-text">Logout</span></div>
     </nav>
 
     <div class="container">
@@ -386,7 +388,7 @@
 
             // Add active classes
             document.getElementById(tabId).classList.add('active');
-            
+
             const btnId = 'btn-' + tabId;
             document.getElementById(btnId).classList.add('active');
         }
@@ -397,12 +399,31 @@
             alertEl.textContent = message;
             alertEl.style.display = 'block';
             alertEl.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
-            
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             setTimeout(() => {
                 alertEl.style.display = 'none';
             }, 5000);
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+            } catch (e) {
+                // ignore
+            }
+            window.location.href = 'login.html';
+        }
+
+        // Redirect to login on any 401 (session expired / not authenticated)
+        function handleAuthResponse(res) {
+            if (res.status === 401) {
+                window.location.href = 'login.html';
+                throw new Error('Not authenticated');
+            }
+            return res;
         }
 
         // API Requests
@@ -450,7 +471,7 @@
 
             container.innerHTML = players.map(name => {
                 const avatarUrl = avatarsData[name];
-                const avatarHtml = avatarUrl 
+                const avatarHtml = avatarUrl
                     ? `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0;"><img src="${avatarUrl}" alt="${name}"></div>`
                     : `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0; font-size: 0.9em;">👤</div>`;
 
@@ -477,15 +498,15 @@
             const hofVal = hofSelect.value;
 
             // Winner 1 options
-            w1Select.innerHTML = '<option value="">Select winner...</option>' + 
+            w1Select.innerHTML = '<option value="">Select winner...</option>' +
                 players.map(name => `<option value="${name}">${name}</option>`).join('');
 
             // Winner 2 options
-            w2Select.innerHTML = '<option value="">None</option>' + 
+            w2Select.innerHTML = '<option value="">None</option>' +
                 players.map(name => `<option value="${name}">${name}</option>`).join('');
 
             // Hall of Fame player options
-            hofSelect.innerHTML = '<option value="">Select player...</option>' + 
+            hofSelect.innerHTML = '<option value="">Select player...</option>' +
                 players.map(name => `<option value="${name}">${name}</option>`).join('');
 
             // Restore selection if possible
@@ -508,12 +529,12 @@
                 const w1Avatar = avatarsData[game.winner1];
                 const w2Avatar = game.winner2 ? avatarsData[game.winner2] : null;
 
-                const w1Display = w1Avatar 
+                const w1Display = w1Avatar
                     ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w1Avatar}" alt="${game.winner1}"></div><strong>${game.winner1}</strong></div>`
                     : `<strong>${game.winner1}</strong>`;
 
-                const w2Display = game.winner2 
-                    ? (w2Avatar 
+                const w2Display = game.winner2
+                    ? (w2Avatar
                         ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w2Avatar}" alt="${game.winner2}"></div>${game.winner2}</div>`
                         : game.winner2)
                     : '<span style="color: #999;">-</span>';
@@ -539,7 +560,7 @@
 
             tbody.innerHTML = hofEntries.map(entry => {
                 const playerAvatar = avatarsData[entry.name];
-                const playerDisplay = playerAvatar 
+                const playerDisplay = playerAvatar
                     ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${playerAvatar}" alt="${entry.name}"></div><strong>${entry.name}</strong></div>`
                     : `<strong>${entry.name}</strong>`;
 
@@ -569,6 +590,7 @@
                     body: JSON.stringify({ name })
                 });
 
+                handleAuthResponse(res);
                 if (!res.ok) {
                     const data = await res.json();
                     throw new Error(data.error || 'Failed to add player.');
@@ -602,17 +624,18 @@
                     body: JSON.stringify({ date, winner1, winner2 })
                 });
 
+                handleAuthResponse(res);
                 if (!res.ok) {
                     const data = await res.json();
                     throw new Error(data.error || 'Failed to register game.');
                 }
 
                 showMsg('Game results saved successfully!');
-                
+
                 // Reset form fields except date
                 document.getElementById('game-winner1').value = '';
                 document.getElementById('game-winner2').value = '';
-                
+
                 await fetchGames();
             } catch (err) {
                 showMsg(err.message, false);
@@ -634,13 +657,14 @@
                     body: JSON.stringify({ date, name, hand })
                 });
 
+                handleAuthResponse(res);
                 if (!res.ok) {
                     const data = await res.json();
                     throw new Error(data.error || 'Failed to register Hall of Fame entry.');
                 }
 
                 showMsg('Hall of Fame record saved successfully!');
-                
+
                 // Reset form fields except date
                 document.getElementById('hof-player').value = '';
                 document.getElementById('hof-hand').value = '';
@@ -662,6 +686,7 @@
                     method: 'DELETE'
                 });
 
+                handleAuthResponse(res);
                 if (!res.ok) {
                     const data = await res.json();
                     throw new Error(data.error || 'Failed to delete player.');
@@ -684,6 +709,7 @@
                     method: 'DELETE'
                 });
 
+                handleAuthResponse(res);
                 if (!res.ok) {
                     const data = await res.json();
                     throw new Error(data.error || 'Failed to delete game record.');
@@ -706,6 +732,7 @@
                     method: 'DELETE'
                 });
 
+                handleAuthResponse(res);
                 if (!res.ok) {
                     const data = await res.json();
                     throw new Error(data.error || 'Failed to delete Hall of Fame entry.');
