@@ -1,12 +1,12 @@
 const rankingsData = {
     "2026": [
-        { "name": "Alex", "wins": 2, "dates": ["23/03/2026", "13/04/2026"] },
+        { "name": "Alex", "wins": 2, "dates": ["23/03/2026", "13/04/2026"], "sec": ["06/07/2026"] },
         { "name": "Ramao", "wins": 2, "dates": ["09/03/2026", "27/04/2026"] },
         { "name": "Galende", "wins": 2, "dates": ["02/02/2026", "25/05/2026"] },
         { "name": "Pedro", "wins": 1, "dates": ["19/01/2026"] },
         { "name": "Bille", "wins": 1, "dates": ["23/02/2026"] },
         { "name": "Maiko", "wins": 1, "dates": ["08/06/2026"] },
-        { "name": "Rodrigo", "wins": 0, "sec": ["25/05/2026"] },
+        { "name": "Rodrigo", "wins": 1, "dates": ["06/07/2026"], "sec": ["25/05/2026"] },
         { "name": "Almir", "wins": 0, "sec": ["08/06/2026"] }
     ],
     "2025": [
@@ -47,6 +47,8 @@ const rankingsData = {
 };
 
 const hallOfFameData = [
+    { "name": "Rodrigo", "date": "06/07/2026", "hand": "8♥️9♥️10♥️J♥️Q♥️" },
+    { "name": "Alex", "date": "06/07/2026", "hand": "8♦️9♦️10♦️J♦️Q♦️" },
     { "name": "Afonso", "date": "13/04/2026", "hand": "A♦️A♠️A♥️A♣️" },
     { "name": "Jardel", "date": "09/03/2026", "hand": "5♦️5♠️5♥️5♣️" },
     { "name": "Rodrigo", "date": "23/02/2026", "hand": "10♦️10♠️10♥️10♣️" },
@@ -74,5 +76,6 @@ const avatarsData = {
     "Jafer": "./avatar/jafer.png",
     "Maykon": "./avatar/maykon.png",
     "Luan": "./avatar/luan.png",
-    "Pedro": "./avatar/pedro.png"
+    "Pedro": "./avatar/pedro.png",
+    "Rodrigo": "./avatar/rodrigo.png"
 };
