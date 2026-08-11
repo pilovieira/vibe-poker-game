@@ -1,13 +1,16 @@
 const rankingsData = {
     "2026": [
+        { "name": "Ramao", "wins": 3, "dates": ["09/03/2026", "27/04/2026", "27/07/2026"] },
         { "name": "Alex", "wins": 2, "dates": ["23/03/2026", "13/04/2026"], "sec": ["06/07/2026"] },
-        { "name": "Ramao", "wins": 2, "dates": ["09/03/2026", "27/04/2026"] },
         { "name": "Galende", "wins": 2, "dates": ["02/02/2026", "25/05/2026"] },
         { "name": "Pedro", "wins": 1, "dates": ["19/01/2026"] },
         { "name": "Bille", "wins": 1, "dates": ["23/02/2026"] },
         { "name": "Maiko", "wins": 1, "dates": ["08/06/2026"] },
         { "name": "Rodrigo", "wins": 1, "dates": ["06/07/2026"], "sec": ["25/05/2026"] },
-        { "name": "Almir", "wins": 0, "sec": ["08/06/2026"] }
+        { "name": "Afonso", "wins": 1, "dates": ["11/08/2026"] },
+        { "name": "Almir", "wins": 0, "sec": ["08/06/2026"] },
+        { "name": "Jardel", "wins": 0, "sec": ["27/07/2026"] },
+        { "name": "Pilo", "wins": 0, "sec": ["11/08/2026"] }
     ],
     "2025": [
         { "name": "Paulinho", "wins": 4 },
@@ -47,6 +50,7 @@ const rankingsData = {
 };
 
 const hallOfFameData = [
+    { "name": "Ramao", "date": "27/07/2026", "hand": "J♦️J♠️J♥️J♣️" },
     { "name": "Rodrigo", "date": "06/07/2026", "hand": "8♥️9♥️10♥️J♥️Q♥️" },
     { "name": "Alex", "date": "06/07/2026", "hand": "8♦️9♦️10♦️J♦️Q♦️" },
     { "name": "Afonso", "date": "13/04/2026", "hand": "A♦️A♠️A♥️A♣️" },
