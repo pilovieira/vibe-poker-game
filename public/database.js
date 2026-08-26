@@ -6,8 +6,9 @@ const rankingsData = {
         { "name": "Pedro", "wins": 1, "dates": ["19/01/2026"] },
         { "name": "Bille", "wins": 1, "dates": ["23/02/2026"] },
         { "name": "Maiko", "wins": 1, "dates": ["08/06/2026"] },
-        { "name": "Rodrigo", "wins": 1, "dates": ["06/07/2026"], "sec": ["25/05/2026"] },
+        { "name": "Rodrigo", "wins": 1, "dates": ["06/07/2026"], "sec": ["25/05/2026", "24/08/2026"] },
         { "name": "Afonso", "wins": 1, "dates": ["11/08/2026"] },
+        { "name": "Jafer", "wins": 1, "dates": ["24/08/2026"] },
         { "name": "Almir", "wins": 0, "sec": ["08/06/2026"] },
         { "name": "Jardel", "wins": 0, "sec": ["27/07/2026"] },
         { "name": "Pilo", "wins": 0, "sec": ["11/08/2026"] }
