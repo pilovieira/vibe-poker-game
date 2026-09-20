@@ -102,7 +102,8 @@
             </div>
 
             <div class="reset-container">
-                <button class="copy-list-btn" onclick="sharePlayersList()">📋 Copy Players List</button>
+                <button class="copy-list-btn" data-label="Players List" onclick="sharePlayersList(this)">📋 Copy Players List</button>
+                <button class="copy-list-btn" data-label="Pot Summary" onclick="shareSummary(this)">📋 Copy Pot Summary</button>
                 <button class="add-all-btn" onclick="incrementAllActivePlayers()">➕ Add 1 for All In Game</button>
                 <button class="reset-button" onclick="resetAllAddons()">🔄 Reset All Counts</button>
             </div>
@@ -781,7 +782,7 @@
         }
 
         // Function to share or copy player list
-        function sharePlayersList() {
+        function sharePlayersList(btn) {
             const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "out":[], "manualPlayers": []}');
             const addonData = storageData.counts || {};
             const outPlayers = storageData.out || [];
@@ -804,20 +805,34 @@
                 return;
             }
 
-            // If Web Share API is available (usually mobile)
+            shareText('Poker Players List', listText, btn);
+        }
+
+        // Share the pot / rebuys / prizes summary
+        function shareSummary(btn) {
+            const val = id => document.getElementById(id).textContent;
+            const buyin = document.getElementById('buyin-multiplier').value;
+            const lines = [
+                `Buy-in: R$ ${buyin}`,
+                `Rebuys: ${val('summary-rayon')}`,
+                `Total Chips: ${val('summary-chips')}`,
+                `Pot: R$ ${val('summary-pot')}`,
+                `1st: R$ ${val('summary-first')}`,
+                `2nd: R$ ${val('summary-second')}`
+            ];
+            shareText('Poker Pot Summary', lines.join('\n'), btn);
+        }
+
+        // Use the Web Share API when available (usually mobile), else copy to the clipboard
+        function shareText(title, text, btn) {
             if (navigator.share) {
-                navigator.share({
-                    title: 'Poker Players List',
-                    text: listText
-                }).catch(err => {
+                navigator.share({ title, text }).catch(err => {
                     console.error('Share failed:', err);
                 });
                 return;
             }
 
-            // Fallback to Clipboard (usually desktop)
-            navigator.clipboard.writeText(listText).then(() => {
-                const btn = document.querySelector('.copy-list-btn');
+            navigator.clipboard.writeText(text).then(() => {
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '✅ Copied!';
                 setTimeout(() => {
@@ -832,8 +847,9 @@
         // Update share button text if sharing is supported
         function initShareButton() {
             if (navigator.share) {
-                const btn = document.querySelector('.copy-list-btn');
-                if (btn) btn.innerHTML = '📤 Share Players List';
+                document.querySelectorAll('.copy-list-btn').forEach(btn => {
+                    btn.innerHTML = '📤 Share ' + btn.dataset.label;
+                });
             }
         }
 
