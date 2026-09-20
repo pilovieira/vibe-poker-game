@@ -308,6 +308,10 @@
             modal.style.display = 'none';
         }
 
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        }
+
         // Function to show player details modal
         function showPlayerModal(name) {
             const modal = document.getElementById('player-modal');
@@ -326,6 +330,7 @@
                 <div class="modal-header">
                     ${avatarDisplay}
                     <h2>${name}</h2>
+                    ${bioData[name] ? `<p class="player-bio" style="color: #ccc; margin-top: 8px; white-space: pre-line;">${escapeHtml(bioData[name])}</p>` : ''}
                 </div>
                 <div style="text-align: center; font-size: 1.2em;">
                     <div class="player-card-wins" style="font-size: 1.1em; padding: 5px 15px; margin-bottom: 15px;">
@@ -934,12 +939,13 @@
             updateBlinds();
         }
 
-        // ── Data layer: fetch from Redis via REST API ──────────────────────────
+        // ── Data layer: Firebase Realtime Database ──────────────────────────
 
         // These module-level variables are populated by initData() before any render
         let rankingsData = {};
         let hallOfFameData = [];
         let avatarsData = {};
+        let bioData = {};
 
         /**
          * Compile rankingsData from a flat list of game records.
@@ -985,22 +991,21 @@
         }
 
         /**
-         * Fetch all data from the Redis-backed REST APIs, populate the global
+         * Fetch all data from Firebase Realtime Database, populate the global
          * variables, and then render everything.
          */
         async function initData() {
             try {
-                const [gamesRes, hofRes, avatarsRes, playersRes] = await Promise.all([
-                    fetch('/api/games'),
-                    fetch('/api/hof'),
-                    fetch('/api/avatars'),
-                    fetch('/api/players')
-                ]);
+                const fb = await import('./firebase.js');
+                const playerList = await fb.getPlayers();
+                const [rawGames, hof] = await Promise.all([fb.getGames(playerList), fb.getHof(playerList)]);
 
-                const games = gamesRes.ok ? await gamesRes.json() : [];
-                hallOfFameData = hofRes.ok ? await hofRes.json() : [];
-                avatarsData = avatarsRes.ok ? await avatarsRes.json() : {};
-                const players = playersRes.ok ? await playersRes.json() : [];
+                // The UI works with player names; resolve ids -> names once, here.
+                const games = rawGames.map(g => ({...g, winner1: g.winner1Name, winner2: g.winner2Name}));
+                const players = playerList.map(p => p.name);
+                hallOfFameData = hof;
+                avatarsData = Object.fromEntries(playerList.filter(p => p.avatar).map(p => [p.name, p.avatar]));
+                bioData = Object.fromEntries(playerList.filter(p => p.bio).map(p => [p.name, p.bio]));
 
                 // Build rankingsData from games
                 rankingsData = buildRankingsFromGames(games);
@@ -1026,7 +1031,7 @@
             } catch (err) {
                 console.error('Failed to load data from server:', err);
                 document.getElementById('rankings-container').innerHTML =
-                    `<div class="error"><h2>⚠️ Cannot connect to server</h2><p>Make sure the Node.js server is running: <code>npm start</code></p></div>`;
+                    `<div class="error"><h2>⚠️ Cannot load data</h2><p>Could not reach Firebase Realtime Database. Please try again.</p></div>`;
             }
         }
 
@@ -1040,7 +1045,7 @@
             const lastTab = localStorage.getItem('pokerActiveTab') || 'ranking-tab';
             switchTab(lastTab);
 
-            // Fetch data from Redis and render
+            // Fetch data from Firebase and render
             await initData();
         });
     </script>

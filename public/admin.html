@@ -232,13 +232,27 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                 <!-- Add Player Form -->
                 <div class="admin-card">
-                    <h2>➕ Add Player</h2>
-                    <form id="add-player-form" onsubmit="handleAddPlayer(event)">
+                    <h2 id="player-form-title">➕ Add Player</h2>
+                    <form id="add-player-form" onsubmit="handleSavePlayer(event)">
+                        <input type="hidden" id="player-id">
                         <div class="form-group">
                             <label for="player-name">Player Name</label>
                             <input type="text" id="player-name" class="form-control" placeholder="Enter full name..." required>
                         </div>
-                        <button type="submit" class="btn-submit">Add Player</button>
+                        <div class="form-group">
+                            <label for="player-bio">Profile</label>
+                            <textarea id="player-bio" class="form-control" rows="3" maxlength="500" placeholder="Short bio, nickname, favorite hand..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-avatar">Avatar</label>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div id="avatar-preview" class="ranking-avatar small" style="width: 64px; height: 64px; margin: 0; flex-shrink: 0;">👤</div>
+                                <input type="file" id="player-avatar" accept="image/*" onchange="handleAvatarPicked(event)">
+                            </div>
+                            <label style="font-weight: normal; margin-top: 8px;"><input type="checkbox" id="player-avatar-remove" onchange="handleAvatarRemoveToggle()"> Remove avatar</label>
+                        </div>
+                        <button type="submit" class="btn-submit" id="player-submit-btn">Add Player</button>
+                        <button type="button" class="btn-submit" id="player-cancel-btn" style="display: none; background: #777; margin-top: 10px;" onclick="resetPlayerForm()">Cancel edit</button>
                     </form>
                 </div>
 
@@ -358,9 +372,6 @@
         </div>
     </div>
 
-    <!-- Need to fetch dynamic database.js to read static avatar mappings -->
-    <script src="database.js"></script>
-
     <script>
         // Set today's date formatted as DD/MM/YYYY to form inputs helper
         function getTodayFormatted() {
@@ -376,6 +387,7 @@
         document.getElementById('hof-date').value = getTodayFormatted();
 
         // Local State
+        let avatarsData = {};
         let players = [];
         let games = [];
         let hofEntries = [];
@@ -408,29 +420,34 @@
         }
 
         // Logout
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        }
+
+        const loadFb = () => import('./firebase.js');
+
         async function logout() {
             try {
-                await fetch('/api/logout', { method: 'POST' });
+                await (await loadFb()).logout();
             } catch (e) {
                 // ignore
             }
             window.location.href = 'login.html';
         }
 
-        // Redirect to login on any 401 (session expired / not authenticated)
-        function handleAuthResponse(res) {
-            if (res.status === 401) {
+        // Surface permission errors (expired session / not an admin) as a login redirect.
+        function handleWriteError(err) {
+            if (err && /permission_denied/i.test(err.code || err.message || '')) {
                 window.location.href = 'login.html';
-                throw new Error('Not authenticated');
             }
-            return res;
+            showMsg(err.message, false);
         }
 
         // API Requests
         async function fetchPlayers() {
             try {
-                const res = await fetch('/api/players');
-                players = await res.json();
+                players = await (await loadFb()).getPlayers();
+                avatarsData = Object.fromEntries(players.filter(p => p.avatar).map(p => [p.name, p.avatar]));
                 renderPlayers();
                 populateDropdowns();
             } catch (err) {
@@ -441,8 +458,7 @@
 
         async function fetchGames() {
             try {
-                const res = await fetch('/api/games');
-                games = await res.json();
+                games = await (await loadFb()).getGames(players);
                 renderGames();
             } catch (err) {
                 console.error(err);
@@ -452,8 +468,7 @@
 
         async function fetchHof() {
             try {
-                const res = await fetch('/api/hof');
-                hofEntries = await res.json();
+                hofEntries = await (await loadFb()).getHof(players);
                 renderHof();
             } catch (err) {
                 console.error(err);
@@ -469,19 +484,21 @@
                 return;
             }
 
-            container.innerHTML = players.map(name => {
-                const avatarUrl = avatarsData[name];
-                const avatarHtml = avatarUrl
-                    ? `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0;"><img src="${avatarUrl}" alt="${name}"></div>`
+            container.innerHTML = players.map(p => {
+                const avatarHtml = p.avatar
+                    ? `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0;"><img src="${p.avatar}" alt="${escapeHtml(p.name)}"></div>`
                     : `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0; font-size: 0.9em;">👤</div>`;
 
                 return `
                     <div class="player-list-item">
                         <div class="player-info-container">
                             ${avatarHtml}
-                            <span style="font-weight: bold; color: #333;">${name}</span>
+                            <span style="font-weight: bold; color: #333;">${escapeHtml(p.name)}</span>
                         </div>
-                        <button class="btn-delete" onclick="handleDeletePlayer('${name}')">Delete</button>
+                        <div>
+                            <button class="btn-delete" style="background: #1a7a42;" onclick="handleEditPlayer('${p.id}')">Edit</button>
+                            <button class="btn-delete" onclick="handleDeletePlayer('${p.id}')">Delete</button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -497,22 +514,15 @@
             const w2Val = w2Select.value;
             const hofVal = hofSelect.value;
 
-            // Winner 1 options
-            w1Select.innerHTML = '<option value="">Select winner...</option>' +
-                players.map(name => `<option value="${name}">${name}</option>`).join('');
-
-            // Winner 2 options
-            w2Select.innerHTML = '<option value="">None</option>' +
-                players.map(name => `<option value="${name}">${name}</option>`).join('');
-
-            // Hall of Fame player options
-            hofSelect.innerHTML = '<option value="">Select player...</option>' +
-                players.map(name => `<option value="${name}">${name}</option>`).join('');
+            const options = players.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+            w1Select.innerHTML = '<option value="">Select winner...</option>' + options;
+            w2Select.innerHTML = '<option value="">None</option>' + options;
+            hofSelect.innerHTML = '<option value="">Select player...</option>' + options;
 
             // Restore selection if possible
-            if (players.includes(w1Val)) w1Select.value = w1Val;
-            if (players.includes(w2Val)) w2Select.value = w2Val;
-            if (players.includes(hofVal)) hofSelect.value = hofVal;
+            if (players.some(p => p.id === w1Val)) w1Select.value = w1Val;
+            if (players.some(p => p.id === w2Val)) w2Select.value = w2Val;
+            if (players.some(p => p.id === hofVal)) hofSelect.value = hofVal;
         }
 
         function renderGames() {
@@ -526,22 +536,22 @@
             const displayGames = [...games].reverse();
 
             tbody.innerHTML = displayGames.map(game => {
-                const w1Avatar = avatarsData[game.winner1];
-                const w2Avatar = game.winner2 ? avatarsData[game.winner2] : null;
+                const w1Avatar = avatarsData[game.winner1Name];
+                const w2Avatar = game.winner2 ? avatarsData[game.winner2Name] : null;
 
                 const w1Display = w1Avatar
-                    ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w1Avatar}" alt="${game.winner1}"></div><strong>${game.winner1}</strong></div>`
-                    : `<strong>${game.winner1}</strong>`;
+                    ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w1Avatar}" alt="${game.winner1Name}"></div><strong>${game.winner1Name}</strong></div>`
+                    : `<strong>${game.winner1Name}</strong>`;
 
                 const w2Display = game.winner2
                     ? (w2Avatar
-                        ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w2Avatar}" alt="${game.winner2}"></div>${game.winner2}</div>`
-                        : game.winner2)
+                        ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w2Avatar}" alt="${game.winner2Name}"></div>${game.winner2Name}</div>`
+                        : game.winner2Name)
                     : '<span style="color: #999;">-</span>';
 
                 return `
                     <tr>
-                        <td style="font-weight: bold; color: #666;">#${game.id}</td>
+                        <td style="font-weight: bold; color: #666;">${idx + 1}</td>
                         <td style="font-weight: bold;">${game.date}</td>
                         <td>${w1Display}</td>
                         <td>${w2Display}</td>
@@ -558,7 +568,7 @@
                 return;
             }
 
-            tbody.innerHTML = hofEntries.map(entry => {
+            tbody.innerHTML = hofEntries.map((entry, idx) => {
                 const playerAvatar = avatarsData[entry.name];
                 const playerDisplay = playerAvatar
                     ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${playerAvatar}" alt="${entry.name}"></div><strong>${entry.name}</strong></div>`
@@ -566,7 +576,7 @@
 
                 return `
                     <tr>
-                        <td style="font-weight: bold; color: #666;">#${entry.id}</td>
+                        <td style="font-weight: bold; color: #666;">${idx + 1}</td>
                         <td style="font-weight: bold;">${entry.date}</td>
                         <td>${playerDisplay}</td>
                         <td><span class="hof-hand" style="margin: 0; font-size: 0.9em; padding: 4px 10px;">${entry.hand}</span></td>
@@ -577,30 +587,73 @@
         }
 
         // Handle Add operations
-        async function handleAddPlayer(event) {
+        let pendingAvatar; // undefined = unchanged, null = remove, string = new data URL
+
+        function setAvatarPreview(url) {
+            const el = document.getElementById('avatar-preview');
+            el.innerHTML = url ? `<img src="${url}" alt="">` : '👤';
+        }
+
+        async function handleAvatarPicked(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                pendingAvatar = await (await loadFb()).resizeAvatar(file);
+                document.getElementById('player-avatar-remove').checked = false;
+                setAvatarPreview(pendingAvatar);
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        function handleAvatarRemoveToggle() {
+            if (document.getElementById('player-avatar-remove').checked) {
+                pendingAvatar = null;
+                document.getElementById('player-avatar').value = '';
+                setAvatarPreview(null);
+            }
+        }
+
+        function resetPlayerForm() {
+            document.getElementById('add-player-form').reset();
+            document.getElementById('player-id').value = '';
+            document.getElementById('player-form-title').textContent = '➕ Add Player';
+            document.getElementById('player-submit-btn').textContent = 'Add Player';
+            document.getElementById('player-cancel-btn').style.display = 'none';
+            pendingAvatar = undefined;
+            setAvatarPreview(null);
+        }
+
+        function handleEditPlayer(id) {
+            const p = players.find(x => x.id === id);
+            if (!p) return;
+            resetPlayerForm();
+            document.getElementById('player-id').value = p.id;
+            document.getElementById('player-name').value = p.name;
+            document.getElementById('player-bio').value = p.bio || '';
+            document.getElementById('player-form-title').textContent = '✏️ Edit Player';
+            document.getElementById('player-submit-btn').textContent = 'Save Player';
+            document.getElementById('player-cancel-btn').style.display = 'block';
+            setAvatarPreview(p.avatar);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function handleSavePlayer(event) {
             event.preventDefault();
-            const input = document.getElementById('player-name');
-            const name = input.value.trim();
+            const id = document.getElementById('player-id').value || undefined;
+            const name = document.getElementById('player-name').value.trim();
+            const bio = document.getElementById('player-bio').value;
             if (!name) return;
 
             try {
-                const res = await fetch('/api/players', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name })
-                });
-
-                handleAuthResponse(res);
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to add player.');
-                }
-
-                showMsg(`Player "${name}" added successfully!`);
-                input.value = '';
+                await (await loadFb()).savePlayer({ id, name, bio, avatar: pendingAvatar });
+                showMsg(`Player "${name}" saved successfully!`);
+                resetPlayerForm();
                 await fetchPlayers();
+                await fetchGames();
+                await fetchHof();
             } catch (err) {
-                showMsg(err.message, false);
+                handleWriteError(err);
             }
         }
 
@@ -618,17 +671,7 @@
             }
 
             try {
-                const res = await fetch('/api/games', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ date, winner1, winner2 })
-                });
-
-                handleAuthResponse(res);
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to register game.');
-                }
+                await (await loadFb()).addGame({ date, winner1, winner2 });
 
                 showMsg('Game results saved successfully!');
 
@@ -638,30 +681,20 @@
 
                 await fetchGames();
             } catch (err) {
-                showMsg(err.message, false);
+                handleWriteError(err);
             }
         }
 
         async function handleAddHof(event) {
             event.preventDefault();
             const date = document.getElementById('hof-date').value.trim();
-            const name = document.getElementById('hof-player').value;
+            const playerId = document.getElementById('hof-player').value;
             const hand = document.getElementById('hof-hand').value.trim();
 
-            if (!date || !name || !hand) return;
+            if (!date || !playerId || !hand) return;
 
             try {
-                const res = await fetch('/api/hof', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ date, name, hand })
-                });
-
-                handleAuthResponse(res);
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to register Hall of Fame entry.');
-                }
+                await (await loadFb()).addHof({ date, playerId, hand });
 
                 showMsg('Hall of Fame record saved successfully!');
 
@@ -671,54 +704,39 @@
 
                 await fetchHof();
             } catch (err) {
-                showMsg(err.message, false);
+                handleWriteError(err);
             }
         }
 
         // Handle Delete operations
-        async function handleDeletePlayer(name) {
-            if (!confirm(`Are you sure you want to delete player "${name}"? This will remove their registration and avatar mappings (historical game stats will not be deleted).`)) {
+        async function handleDeletePlayer(id) {
+            const name = (players.find(p => p.id === id) || {}).name;
+            if (!confirm(`Are you sure you want to delete player "${name}"? Players with games or Hall of Fame entries cannot be deleted.`)) {
                 return;
             }
 
             try {
-                const res = await fetch(`/api/players/${encodeURIComponent(name)}`, {
-                    method: 'DELETE'
-                });
-
-                handleAuthResponse(res);
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to delete player.');
-                }
+                await (await loadFb()).deletePlayer(id);
 
                 showMsg(`Player "${name}" deleted.`);
                 await fetchPlayers();
             } catch (err) {
-                showMsg(err.message, false);
+                handleWriteError(err);
             }
         }
 
         async function handleDeleteGame(id) {
-            if (!confirm(`Are you sure you want to delete Game #${id}?`)) {
+            if (!confirm(`Are you sure you want to delete this game record?`)) {
                 return;
             }
 
             try {
-                const res = await fetch(`/api/games/${id}`, {
-                    method: 'DELETE'
-                });
+                await (await loadFb()).deleteGame(id);
 
-                handleAuthResponse(res);
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to delete game record.');
-                }
-
-                showMsg(`Game #${id} deleted.`);
+                showMsg('Game deleted.');
                 await fetchGames();
             } catch (err) {
-                showMsg(err.message, false);
+                handleWriteError(err);
             }
         }
 
@@ -728,25 +746,23 @@
             }
 
             try {
-                const res = await fetch(`/api/hof/${id}`, {
-                    method: 'DELETE'
-                });
-
-                handleAuthResponse(res);
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to delete Hall of Fame entry.');
-                }
+                await (await loadFb()).deleteHof(id);
 
                 showMsg('Hall of Fame record deleted.');
                 await fetchHof();
             } catch (err) {
-                showMsg(err.message, false);
+                handleWriteError(err);
             }
         }
 
         // Initialization
         document.addEventListener('DOMContentLoaded', async () => {
+            // Gate the page: only signed-in admins may stay.
+            const fb = await loadFb();
+            if (!(await fb.isAdmin(await fb.whenAuthReady()))) {
+                window.location.href = 'login.html';
+                return;
+            }
             await fetchPlayers();
             await fetchGames();
             await fetchHof();

@@ -93,8 +93,8 @@
             <div id="alert-msg" class="alert alert-error"></div>
             <form id="login-form">
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" class="form-control" autocomplete="username" required>
+                    <label for="username">Email</label>
+                    <input type="email" id="username" class="form-control" autocomplete="username" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
@@ -105,7 +105,9 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { login, logout, whenAuthReady, isAdmin } from './firebase.js';
+
         const form = document.getElementById('login-form');
         const alertEl = document.getElementById('alert-msg');
 
@@ -114,29 +116,28 @@
             alertEl.style.display = 'block';
         }
 
+        // Already signed in as admin: skip the form.
+        whenAuthReady().then(async user => {
+            if (await isAdmin(user)) window.location.href = 'admin.html';
+        });
+
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             alertEl.style.display = 'none';
 
-            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
             try {
-                const res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
-                    showError(data.error || 'Login failed.');
+                const cred = await login(email, password);
+                if (!(await isAdmin(cred.user))) {
+                    await logout();
+                    showError('This account is not an admin.');
                     return;
                 }
-
                 window.location.href = 'admin.html';
             } catch (err) {
-                showError('Unable to reach the server. Please try again.');
+                showError('Invalid email or password.');
             }
         });
     </script>

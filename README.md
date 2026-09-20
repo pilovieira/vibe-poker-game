@@ -50,7 +50,9 @@ A dedicated space for the most rare and memorable hands in your group's history.
 - **Aesthetics**: Custom-designed "Poker Felt" theme with glassmorphism effects and vibrant gradients.
 - **Responsive**: Mobile-first design. On small screens, the navbar collapses into an icon-only mode with tiny page labels for maximum space.
 - **Persistence**: All live game data (blinds, add-ons, guest players) is persisted in `localStorage`. You can refresh the page or return later without losing your session.
-- **Data Engine**: Centralized data management via `database.js` for easy updates to history and player avatars.
+- **Data Engine**: Firebase Realtime Database under the root path `vibe-poker` (players, avatars, games, hall_of_fame), read directly by the browser with the Firebase JS SDK (`public/firebase.js`).
+- **Admin**: Firebase Auth (email/password). A user is admin when their UID is listed at `vibe-poker/admins/<uid>: true`; `database.rules.json` enforces read-public / write-admin-only.
+- **Deploy**: `firebase deploy --only database,hosting` (project `pilovieira-sandbox`, site `vibe-poker`). No server required.
 
 ---
 
@@ -58,7 +60,7 @@ A dedicated space for the most rare and memorable hands in your group's history.
 
 - `index.html`: The core application hub containing all tabs and modals.
 - `ranking.css`: A comprehensive design system covering everything from standard layouts to mobile-specific micro-interactions.
-- `database.js`: The "Brain" of the app, storing historical rankings, Hall of Fame entries, and player metadata.
+- `firebase.js`: Firebase SDK layer (Realtime Database reads/writes + Auth) shared by index, login and admin pages.
 
 
 ---
