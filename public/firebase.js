@@ -2,7 +2,7 @@
 // The web config below is public by design; access is enforced by database.rules.json.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
 import {
-  getDatabase, ref, get, set, remove, push
+  getDatabase, ref, get, set, update, remove, push
 } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js';
 import {
   getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
@@ -37,10 +37,8 @@ async function readMap(name) {
 // ---- reads (public) -----------------------------------------------------
 // Players: { id, name, bio, avatar } sorted by name. `avatar` is a small data URL (or null).
 export async function getPlayers() {
-  const [players, avatarsSnap] = await Promise.all([readMap('players'), get(node('avatars'))]);
-  const avatars = avatarsSnap.val() || {};
-  return players
-    .map(p => ({ bio: '', ...p, avatar: avatars[p.id] || null }))
+  return (await readMap('players'))
+    .map(p => ({ bio: '', avatar: null, ...p }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -72,9 +70,9 @@ export async function savePlayer({ id, name, bio, avatar }) {
     throw new Error('Player already exists.');
   }
   const pid = id || push(node('players')).key;
-  await set(node('players', pid), { name, bio: (bio || '').trim() });
-  if (avatar === null) await remove(node('avatars', pid));
-  else if (avatar) await set(node('avatars', pid), avatar);
+  const data = { name, bio: (bio || '').trim() };
+  if (avatar !== undefined) data.avatar = avatar; // null removes the key
+  await update(node('players', pid), data);
   return pid;
 }
 
@@ -84,7 +82,6 @@ export async function deletePlayer(id) {
     throw new Error('This player has games or Hall of Fame entries and cannot be deleted.');
   }
   await remove(node('players', id));
-  await remove(node('avatars', id));
 }
 
 export async function addGame({ date, winner1, winner2 }) {
