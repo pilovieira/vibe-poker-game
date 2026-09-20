@@ -1,4 +1,7 @@
 {
+  "database": {
+    "rules": "database.rules.json"
+  },
   "hosting": {
     "site": "vibe-poker",
     "public": "public",
@@ -6,6 +9,30 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(html|js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
+    "cleanUrls": true,
+    "redirects": [
+      {
+        "source": "/login",
+        "destination": "/admin",
+        "type": 301
+      },
+      {
+        "source": "/login.html",
+        "destination": "/admin",
+        "type": 301
+      }
     ]
   }
 }

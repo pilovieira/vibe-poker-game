@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker - Admin</title>
+    <link rel="stylesheet" href="ranking.css">
+    <style>
+        /* Admin-specific overrides and styling */
+        .admin-subnav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .subnav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        .subnav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .subnav-btn.active {
+            background: #ffd700;
+            color: #0b2e1b;
+            border-color: #ffd700;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .admin-card h2 {
+            color: #0b2e1b;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1a7a42;
+            padding-bottom: 8px;
+            font-size: 1.8em;
+        }
+
+        /* Form styling */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            background: #fff;
+            color: #333;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #1a7a42;
+        }
+
+        .btn-submit {
+            background: #1a7a42;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-submit:hover {
+            background: #145c32;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Tables & Lists */
+        .admin-table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            vertical-align: middle;
+        }
+
+        .admin-table th {
+            background: #f4f6f9;
+            color: #495057;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-table tr:hover {
+            background: rgba(26, 122, 66, 0.05);
+        }
+
+        .btn-delete {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #b71c1c;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .player-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border: 1.5px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .player-list-item:hover {
+            border-color: #1a7a42;
+            transform: translateX(4px);
+        }
+
+        .player-info-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        [hidden] { display: none !important; }
+
+        .container { margin-top: 30px; }
+
+        .admin-topbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .login-wrapper {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 380px;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Shown while Firebase restores the session -->
+    <div id="boot-view" class="container">
+        <div class="loading"><span class="spinner"></span>Loading...</div>
+    </div>
+
+    <!-- Login (shown when not signed in as admin) -->
+    <div id="login-view" class="container login-wrapper" hidden>
+        <div class="admin-card login-card">
+            <h2 style="text-align: center; border: none;">🔒 Admin Login</h2>
+            <div id="login-alert" class="alert alert-error"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" class="form-control" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn-submit">Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin dashboard (shown when signed in as admin) -->
+    <div id="admin-view" class="container" hidden>
+        <div class="admin-topbar">
+            <button type="button" class="btn-logout" onclick="logout()">🚪 Logout</button>
+        </div>
+        <h1>⚙️ Admin Dashboard ⚙️</h1>
+
+        <div class="admin-subnav">
+            <button id="btn-tab-players" class="subnav-btn active" onclick="switchAdminTab('tab-players')">👥 Players Manager</button>
+            <button id="btn-tab-games" class="subnav-btn" onclick="switchAdminTab('tab-games')">🃏 Games Manager</button>
+            <button id="btn-tab-hof" class="subnav-btn" onclick="switchAdminTab('tab-hof')">⭐ Hall of Fame Manager</button>
+        </div>
+
+        <div id="alert-msg" class="alert"></div>
+
+        <!-- 1. Players Manager Tab -->
+        <div id="tab-players" class="tab-content active">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <!-- Add Player Form -->
+                <div class="admin-card">
+                    <h2 id="player-form-title">➕ Add Player</h2>
+                    <form id="add-player-form" onsubmit="handleSavePlayer(event)">
+                        <input type="hidden" id="player-id">
+                        <div class="form-group">
+                            <label for="player-name">Player Name</label>
+                            <input type="text" id="player-name" class="form-control" placeholder="Enter full name..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-bio">Profile</label>
+                            <textarea id="player-bio" class="form-control" rows="3" maxlength="500" placeholder="Short bio, nickname, favorite hand..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-avatar">Avatar</label>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div id="avatar-preview" class="ranking-avatar small" style="width: 64px; height: 64px; margin: 0; flex-shrink: 0;">👤</div>
+                                <input type="file" id="player-avatar" accept="image/*" onchange="handleAvatarPicked(event)">
+                            </div>
+                            <label style="font-weight: normal; margin-top: 8px;"><input type="checkbox" id="player-avatar-remove" onchange="handleAvatarRemoveToggle()"> Remove avatar</label>
+                        </div>
+                        <button type="submit" class="btn-submit" id="player-submit-btn">Add Player</button>
+                        <button type="button" class="btn-submit" id="player-cancel-btn" style="display: none; background: #777; margin-top: 10px;" onclick="resetPlayerForm()">Cancel edit</button>
+                    </form>
+                </div>
+
+                <!-- Players List -->
+                <div class="admin-card">
+                    <h2>👥 Registered Players</h2>
+                    <div id="players-list-container" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                        <!-- Dynamic list -->
+                        <div class="loading" style="color: #333; font-size: 1.1em; padding: 20px;"><span class="spinner"></span>Loading players...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Games Manager Tab -->
+        <div id="tab-games" class="tab-content">
+            <!-- Add Game Form -->
+            <div class="admin-card">
+                <h2>➕ Register Game</h2>
+                <form id="add-game-form" onsubmit="handleAddGame(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label for="game-date">Game Date</label>
+                            <input type="text" id="game-date" class="form-control" placeholder="DD/MM/YYYY" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="game-winner1">🥇 1st Place Winner</label>
+                            <select id="game-winner1" class="form-control" required>
+                                <option value="">Select winner...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="game-winner2">🥈 2nd Place (Optional)</label>
+                            <select id="game-winner2" class="form-control">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit" style="margin-top: 10px;">Save Game Result</button>
+                </form>
+            </div>
+
+            <!-- Games History Table -->
+            <div class="admin-card">
+                <h2>📜 Games History</h2>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th># ID</th>
+                                <th>Date</th>
+                                <th>🥇 1st Winner</th>
+                                <th>🥈 2nd Winner</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="games-table-body">
+                            <!-- Dynamic content -->
+                            <tr>
+                                <td colspan="5" style="color: #333; font-size: 1.1em; padding: 20px; text-align: center;"><span class="spinner" style="vertical-align: -0.15em; margin-right: 10px;"></span>Loading games...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Hall of Fame Manager Tab -->
+        <div id="tab-hof" class="tab-content">
+            <!-- Add Hall of Fame Entry Form -->
+            <div class="admin-card">
+                <h2>➕ Add Hall of Fame Entry</h2>
+                <form id="add-hof-form" onsubmit="handleAddHof(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label for="hof-date">Date</label>
+                            <input type="text" id="hof-date" class="form-control" placeholder="DD/MM/YYYY" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hof-player">Player</label>
+                            <select id="hof-player" class="form-control" required>
+                                <option value="">Select player...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="hof-hand">Hand Description</label>
+                            <input type="text" id="hof-hand" class="form-control" placeholder="e.g. A♦️A♠️A♥️A♣️" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit" style="margin-top: 10px;">Save Hall of Fame Entry</button>
+                </form>
+            </div>
+
+            <!-- Hall of Fame Entries Table -->
+            <div class="admin-card">
+                <h2>⭐ Hall of Fame Records</h2>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th># ID</th>
+                                <th>Date</th>
+                                <th>Player</th>
+                                <th>Hand</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hof-table-body">
+                            <!-- Dynamic content -->
+                            <tr>
+                                <td colspan="5" style="color: #333; font-size: 1.1em; padding: 20px; text-align: center;"><span class="spinner" style="vertical-align: -0.15em; margin-right: 10px;"></span>Loading Hall of Fame records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set today's date formatted as DD/MM/YYYY to form inputs helper
+        function getTodayFormatted() {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+            const yyyy = today.getFullYear();
+            return `${dd}/${mm}/${yyyy}`;
+        }
+
+        // Initialize default dates
+        document.getElementById('game-date').value = getTodayFormatted();
+        document.getElementById('hof-date').value = getTodayFormatted();
+
+        // Local State
+        let avatarsData = {};
+        let players = [];
+        let games = [];
+        let hofEntries = [];
+
+        // Tab Switcher for Admin Subtabs
+        function switchAdminTab(tabId) {
+            // Remove active classes
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.subnav-btn').forEach(el => el.classList.remove('active'));
+
+            // Add active classes
+            document.getElementById(tabId).classList.add('active');
+
+            const btnId = 'btn-' + tabId;
+            document.getElementById(btnId).classList.add('active');
+        }
+
+        // Show feedback message
+        function showMsg(message, isSuccess = true) {
+            const alertEl = document.getElementById('alert-msg');
+            alertEl.textContent = message;
+            alertEl.style.display = 'block';
+            alertEl.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setTimeout(() => {
+                alertEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Logout
+        // Disable a button and show a spinner while `task` runs.
+        async function withBusy(btn, task) {
+            if (btn) btn.classList.add('is-busy');
+            try {
+                return await task();
+            } finally {
+                if (btn) btn.classList.remove('is-busy');
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        }
+
+        const loadFb = () => import('./firebase.js');
+
+        // Only one of boot / login / admin views is visible at a time.
+        function showView(name) {
+            ['boot', 'login', 'admin'].forEach(v => {
+                document.getElementById(v + '-view').hidden = v !== name;
+            });
+        }
+
+        async function logout() {
+            try {
+                await (await loadFb()).logout();
+            } catch (e) {
+                // ignore
+            }
+            showLogin();
+        }
+
+        function showLogin() {
+            document.getElementById('login-form').reset();
+            document.getElementById('login-alert').style.display = 'none';
+            showView('login');
+        }
+
+        async function openDashboard() {
+            showView('admin');
+            await Promise.all([fetchPlayers(), fetchGames(), fetchHof()]);
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const alertEl = document.getElementById('login-alert');
+            const btn = event.submitter;
+            alertEl.style.display = 'none';
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            btn.classList.add('is-busy');
+            try {
+                const fb = await loadFb();
+                const cred = await fb.login(email, password);
+                if (!(await fb.isAdmin(cred.user))) {
+                    await fb.logout();
+                    throw new Error('This account is not an admin.');
+                }
+                await openDashboard();
+            } catch (err) {
+                alertEl.textContent = err.message === 'This account is not an admin.'
+                    ? err.message : 'Invalid email or password.';
+                alertEl.style.display = 'block';
+            } finally {
+                btn.classList.remove('is-busy');
+            }
+        });
+
+        // Surface permission errors (expired session / not an admin) as a login redirect.
+        function handleWriteError(err) {
+            if (err && /permission_denied/i.test(err.code || err.message || '')) {
+                showLogin();
+            }
+            showMsg(err.message, false);
+        }
+
+        // API Requests
+        async function fetchPlayers() {
+            try {
+                players = await (await loadFb()).getPlayers();
+                avatarsData = Object.fromEntries(players.filter(p => p.avatar).map(p => [p.name, p.avatar]));
+                renderPlayers();
+                populateDropdowns();
+            } catch (err) {
+                console.error(err);
+                showMsg('Error fetching players list.', false);
+            }
+        }
+
+        async function fetchGames() {
+            try {
+                games = await (await loadFb()).getGames(players);
+                renderGames();
+            } catch (err) {
+                console.error(err);
+                showMsg('Error fetching games history.', false);
+            }
+        }
+
+        async function fetchHof() {
+            try {
+                hofEntries = await (await loadFb()).getHof(players);
+                renderHof();
+            } catch (err) {
+                console.error(err);
+                showMsg('Error fetching Hall of Fame.', false);
+            }
+        }
+
+        // Render UI Elements
+        function renderPlayers() {
+            const container = document.getElementById('players-list-container');
+            if (players.length === 0) {
+                container.innerHTML = '<p style="color: #666; font-style: italic; padding: 10px;">No players registered.</p>';
+                return;
+            }
+
+            container.innerHTML = players.map(p => {
+                const avatarHtml = p.avatar
+                    ? `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0;"><img src="${p.avatar}" alt="${escapeHtml(p.name)}"></div>`
+                    : `<div class="ranking-avatar small" style="width: 32px; height: 32px; margin: 0; font-size: 0.9em;">👤</div>`;
+
+                return `
+                    <div class="player-list-item">
+                        <div class="player-info-container">
+                            ${avatarHtml}
+                            <span style="font-weight: bold; color: #333;">${escapeHtml(p.name)}</span>
+                        </div>
+                        <div>
+                            <button class="btn-delete" style="background: #1a7a42;" onclick="handleEditPlayer('${p.id}')">Edit</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateDropdowns() {
+            const w1Select = document.getElementById('game-winner1');
+            const w2Select = document.getElementById('game-winner2');
+            const hofSelect = document.getElementById('hof-player');
+
+            // Save currently selected values
+            const w1Val = w1Select.value;
+            const w2Val = w2Select.value;
+            const hofVal = hofSelect.value;
+
+            const options = players.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+            w1Select.innerHTML = '<option value="">Select winner...</option>' + options;
+            w2Select.innerHTML = '<option value="">None</option>' + options;
+            hofSelect.innerHTML = '<option value="">Select player...</option>' + options;
+
+            // Restore selection if possible
+            if (players.some(p => p.id === w1Val)) w1Select.value = w1Val;
+            if (players.some(p => p.id === w2Val)) w2Select.value = w2Val;
+            if (players.some(p => p.id === hofVal)) hofSelect.value = hofVal;
+        }
+
+        function renderGames() {
+            const tbody = document.getElementById('games-table-body');
+            if (games.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="color: #666; font-style: italic; text-align: center;">No games recorded.</td></tr>';
+                return;
+            }
+
+            // Render descending ID (latest games at top)
+            const displayGames = [...games].reverse();
+
+            tbody.innerHTML = displayGames.map((game, idx) => {
+                const w1Avatar = avatarsData[game.winner1Name];
+                const w2Avatar = game.winner2 ? avatarsData[game.winner2Name] : null;
+
+                const w1Display = w1Avatar
+                    ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w1Avatar}" alt="${game.winner1Name}"></div><strong>${game.winner1Name}</strong></div>`
+                    : `<strong>${game.winner1Name}</strong>`;
+
+                const w2Display = game.winner2
+                    ? (w2Avatar
+                        ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${w2Avatar}" alt="${game.winner2Name}"></div>${game.winner2Name}</div>`
+                        : game.winner2Name)
+                    : '<span style="color: #999;">-</span>';
+
+                return `
+                    <tr>
+                        <td style="font-weight: bold; color: #666;">${displayGames.length - idx}</td>
+                        <td style="font-weight: bold;">${game.date}</td>
+                        <td>${w1Display}</td>
+                        <td>${w2Display}</td>
+                        <td><button class="btn-delete" onclick="handleDeleteGame('${game.id}', this)">Delete</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderHof() {
+            const tbody = document.getElementById('hof-table-body');
+            if (hofEntries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="color: #666; font-style: italic; text-align: center;">No Hall of Fame records.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = hofEntries.map((entry, idx) => {
+                const playerAvatar = avatarsData[entry.name];
+                const playerDisplay = playerAvatar
+                    ? `<div style="display: flex; align-items: center; gap: 8px;"><div class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;"><img src="${playerAvatar}" alt="${entry.name}"></div><strong>${entry.name}</strong></div>`
+                    : `<strong>${entry.name}</strong>`;
+
+                return `
+                    <tr>
+                        <td style="font-weight: bold; color: #666;">${idx + 1}</td>
+                        <td style="font-weight: bold;">${entry.date}</td>
+                        <td>${playerDisplay}</td>
+                        <td><span class="hof-hand" style="margin: 0; font-size: 0.9em; padding: 4px 10px;">${entry.hand}</span></td>
+                        <td><button class="btn-delete" onclick="handleDeleteHof('${entry.id}', this)">Delete</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Handle Add operations
+        let pendingAvatar; // undefined = unchanged, null = remove, string = new data URL
+
+        function setAvatarPreview(url) {
+            const el = document.getElementById('avatar-preview');
+            el.innerHTML = url ? `<img src="${url}" alt="">` : '👤';
+        }
+
+        async function handleAvatarPicked(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('avatar-preview').innerHTML = '<span class="spinner"></span>';
+            try {
+                pendingAvatar = await (await loadFb()).resizeAvatar(file);
+                document.getElementById('player-avatar-remove').checked = false;
+                setAvatarPreview(pendingAvatar);
+            } catch (err) {
+                showMsg(err.message, false);
+            }
+        }
+
+        function handleAvatarRemoveToggle() {
+            if (document.getElementById('player-avatar-remove').checked) {
+                pendingAvatar = null;
+                document.getElementById('player-avatar').value = '';
+                setAvatarPreview(null);
+            }
+        }
+
+        function resetPlayerForm() {
+            document.getElementById('add-player-form').reset();
+            document.getElementById('player-id').value = '';
+            document.getElementById('player-form-title').textContent = '➕ Add Player';
+            document.getElementById('player-submit-btn').textContent = 'Add Player';
+            document.getElementById('player-cancel-btn').style.display = 'none';
+            pendingAvatar = undefined;
+            setAvatarPreview(null);
+        }
+
+        function handleEditPlayer(id) {
+            const p = players.find(x => x.id === id);
+            if (!p) return;
+            resetPlayerForm();
+            document.getElementById('player-id').value = p.id;
+            document.getElementById('player-name').value = p.name;
+            document.getElementById('player-bio').value = p.bio || '';
+            document.getElementById('player-form-title').textContent = '✏️ Edit Player';
+            document.getElementById('player-submit-btn').textContent = 'Save Player';
+            document.getElementById('player-cancel-btn').style.display = 'block';
+            setAvatarPreview(p.avatar);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function handleSavePlayer(event) {
+            event.preventDefault();
+            const submitBtn = event.submitter;
+            const id = document.getElementById('player-id').value || undefined;
+            const name = document.getElementById('player-name').value.trim();
+            const bio = document.getElementById('player-bio').value;
+            if (!name) return;
+
+            if (submitBtn) submitBtn.classList.add('is-busy');
+            try {
+                await (await loadFb()).savePlayer({ id, name, bio, avatar: pendingAvatar });
+                showMsg(`Player "${name}" saved successfully!`);
+                resetPlayerForm();
+                await fetchPlayers();
+                await fetchGames();
+                await fetchHof();
+            } catch (err) {
+                handleWriteError(err);
+            } finally {
+                if (submitBtn) submitBtn.classList.remove('is-busy');
+            }
+        }
+
+        async function handleAddGame(event) {
+            event.preventDefault();
+            const submitBtn = event.submitter;
+            const date = document.getElementById('game-date').value.trim();
+            const winner1 = document.getElementById('game-winner1').value;
+            const winner2 = document.getElementById('game-winner2').value;
+
+            if (!date || !winner1) return;
+
+            if (winner1 === winner2) {
+                showMsg('The 1st place and 2nd place winner cannot be the same person!', false);
+                return;
+            }
+
+            if (submitBtn) submitBtn.classList.add('is-busy');
+            try {
+                await (await loadFb()).addGame({ date, winner1, winner2 });
+
+                showMsg('Game results saved successfully!');
+
+                // Reset form fields except date
+                document.getElementById('game-winner1').value = '';
+                document.getElementById('game-winner2').value = '';
+
+                await fetchGames();
+            } catch (err) {
+                handleWriteError(err);
+            } finally {
+                if (submitBtn) submitBtn.classList.remove('is-busy');
+            }
+        }
+
+        async function handleAddHof(event) {
+            event.preventDefault();
+            const submitBtn = event.submitter;
+            const date = document.getElementById('hof-date').value.trim();
+            const playerId = document.getElementById('hof-player').value;
+            const hand = document.getElementById('hof-hand').value.trim();
+
+            if (!date || !playerId || !hand) return;
+
+            if (submitBtn) submitBtn.classList.add('is-busy');
+            try {
+                await (await loadFb()).addHof({ date, playerId, hand });
+
+                showMsg('Hall of Fame record saved successfully!');
+
+                // Reset form fields except date
+                document.getElementById('hof-player').value = '';
+                document.getElementById('hof-hand').value = '';
+
+                await fetchHof();
+            } catch (err) {
+                handleWriteError(err);
+            } finally {
+                if (submitBtn) submitBtn.classList.remove('is-busy');
+            }
+        }
+
+        // Handle Delete operations
+        async function handleDeleteGame(id, btn) {
+            if (!confirm(`Are you sure you want to delete this game record?`)) {
+                return;
+            }
+
+            if (btn) btn.classList.add('is-busy');
+            try {
+                await (await loadFb()).deleteGame(id);
+
+                showMsg('Game deleted.');
+                await fetchGames();
+            } catch (err) {
+                handleWriteError(err);
+            } finally {
+                if (btn) btn.classList.remove('is-busy');
+            }
+        }
+
+        async function handleDeleteHof(id, btn) {
+            if (!confirm('Are you sure you want to delete this Hall of Fame record?')) {
+                return;
+            }
+
+            if (btn) btn.classList.add('is-busy');
+            try {
+                await (await loadFb()).deleteHof(id);
+
+                showMsg('Hall of Fame record deleted.');
+                await fetchHof();
+            } catch (err) {
+                handleWriteError(err);
+            } finally {
+                if (btn) btn.classList.remove('is-busy');
+            }
+        }
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Gate the page: only signed-in admins may stay.
+            const fb = await loadFb();
+            if (await fb.isAdmin(await fb.whenAuthReady())) {
+                await openDashboard();
+            } else {
+                showLogin();
+            }
+        });
+    </script>
+</body>
+
+</html>

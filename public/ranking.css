@@ -126,6 +126,46 @@ h1 {
     color: white;
     font-size: 1.5em;
     padding: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+/* Small spinning ring; inherits the text color */
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 0.15em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Button waiting on a request */
+.is-busy {
+    opacity: 0.75;
+    pointer-events: none;
+    cursor: wait;
+}
+
+.is-busy::before {
+    content: '';
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    margin-right: 8px;
+    vertical-align: -0.1em;
+    border: 0.15em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
 }
 
 .error {

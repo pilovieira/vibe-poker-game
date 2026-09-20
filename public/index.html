@@ -18,19 +18,21 @@
                 class="tab-text">Game</span></div>
         <div id="nav-hof" class="nav-tab" onclick="switchTab('hof-tab', this)">⭐ <span class="tab-text">Hall of
                 Fame</span></div>
+        <div id="nav-admin" class="nav-tab" onclick="window.location.href='/admin'">⚙️ <span
+                class="tab-text">Admin</span></div>
     </nav>
 
     <div class="container">
         <div id="ranking-tab" class="tab-content active">
             <h1>🏆 Poker Ranking 🏆</h1>
             <div id="rankings-container">
-                <div class="loading">Loading rankings...</div>
+                <div class="loading"><span class="spinner"></span>Loading rankings...</div>
             </div>
 
             <div class="global-ranking-section">
                 <h2 class="year-header">🌍 Global Ranking</h2>
                 <div id="global-rankings-container">
-                    <!-- Dynamic global ranking content -->
+                    <div class="loading"><span class="spinner"></span>Loading...</div>
                 </div>
             </div>
         </div>
@@ -38,7 +40,7 @@
         <div id="players-tab" class="tab-content">
             <h1>👥 Players 👥</h1>
             <div id="players-container" class="players-grid">
-                <!-- Dynamic content -->
+                <div class="loading" style="grid-column: 1 / -1;"><span class="spinner"></span>Loading players...</div>
             </div>
         </div>
 
@@ -79,12 +81,12 @@
                 <div class="multiplier-container">
                     <label>Buy-in: R$</label>
                     <input type="number" id="buyin-multiplier" class="multiplier-input" value="10" min="1"
-                        onchange="saveAndRefreshAddons()">
+                       onchange="saveAndRefreshAddons()">
                     <div
                         style="margin-left: 15px; border-left: 1px solid #ccc; padding-left: 15px; display: flex; align-items: center; gap: 5px;">
                         <input type="checkbox" id="global-addon-toggle" onchange="saveAndRefreshAddons()">
                         <label for="global-addon-toggle"
-                            style="font-size: 0.9em; font-weight: bold; color: #555; cursor: pointer;">Add-On</label>
+                           style="font-size: 0.9em; font-weight: bold; color: #555; cursor: pointer;">Add-On</label>
                     </div>
                 </div>
                 <div class="summary-item">Rebuys: <span id="summary-rayon">0</span></div>
@@ -108,7 +110,7 @@
             </div>
 
             <ul id="addon-list" class="addon-list">
-                <!-- Dynamic content -->
+                <li class="loading" style="color: white; font-size: 1.1em; padding: 20px;"><span class="spinner"></span>Loading players...</li>
             </ul>
         </div>
 
@@ -119,7 +121,7 @@
 
 
                 <div class="hof-list" id="hof-list">
-                    <!-- Dynamic content -->
+                    <div class="loading" style="color: white; font-size: 1.1em; padding: 20px;"><span class="spinner"></span>Loading...</div>
                 </div>
             </div>
         </div>
@@ -162,10 +164,6 @@
         </div>
     </div>
 
-
-
-    <!-- Import database -->
-    <script src="database.js"></script>
 
     <script>
         // Function to format date
@@ -310,6 +308,10 @@
             modal.style.display = 'none';
         }
 
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        }
+
         // Function to show player details modal
         function showPlayerModal(name) {
             const modal = document.getElementById('player-modal');
@@ -328,6 +330,7 @@
                 <div class="modal-header">
                     ${avatarDisplay}
                     <h2>${name}</h2>
+                    ${bioData[name] ? `<p class="player-bio" style="color: #555; margin-top: 8px; white-space: pre-line;">${escapeHtml(bioData[name])}</p>` : ''}
                 </div>
                 <div style="text-align: center; font-size: 1.2em;">
                     <div class="player-card-wins" style="font-size: 1.1em; padding: 5px 15px; margin-bottom: 15px;">
@@ -377,7 +380,7 @@
         // Function to create ranking HTML for a year
         function createYearSection(year, rankings) {
             const hasHistory = rankings.some(p => (p.dates && p.dates.length > 0) || (p.sec && p.sec.length > 0));
-            const historyBtn = hasHistory 
+            const historyBtn = hasHistory
                 ? `<button class="year-history-btn" onclick="showYearHistory('${year}')" title="Show all winners">📜 History</button>`
                 : '';
 
@@ -447,7 +450,7 @@
                 });
 
                 const globalRankings = Object.entries(globalStats)
-                    .map(([name, wins]) => ({ name, wins }))
+                    .map(([name, wins]) => ({name, wins}))
                     .sort((a, b) => b.wins - a.wins);
 
                 let globalHtml = `
@@ -589,7 +592,7 @@
             Object.values(rankingsData).forEach(yearRankings => {
                 yearRankings.forEach(player => {
                     if (!playerStats[player.name]) {
-                        playerStats[player.name] = { wins: 0, hof: 0 };
+                        playerStats[player.name] = {wins: 0, hof: 0};
                     }
                     playerStats[player.name].wins += player.wins;
                 });
@@ -598,7 +601,7 @@
             // Count Hall of Fame mentions
             hallOfFameData.forEach(item => {
                 if (!playerStats[item.name]) {
-                    playerStats[item.name] = { wins: 0, hof: 0 };
+                    playerStats[item.name] = {wins: 0, hof: 0};
                 }
                 playerStats[item.name].hof += 1;
             });
@@ -837,7 +840,6 @@
         }
 
 
-
         // Function to update summary (Add-Ons, Pot, and Prizes)
         function updateAddonSummary() {
             const storageData = JSON.parse(localStorage.getItem('pokerAddons') || '{"counts":{}, "buyin": 10, "out":[], "manualPlayers":[]}');
@@ -905,7 +907,6 @@
         }
 
 
-
         function updateBlinds() {
             const base = parseInt(document.getElementById('blind-base').value) || 0;
             document.getElementById('sb-amount').textContent = base / 2;
@@ -938,13 +939,104 @@
             updateBlinds();
         }
 
-        // Load rankings and Hall of Fame when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            loadRankings();
-            loadPlayers();
-            loadAddons();
-            loadHallOfFame();
+        // ── Data layer: Firebase Realtime Database ──────────────────────────
 
+        // These module-level variables are populated by initData() before any render
+        let rankingsData = {};
+        let hallOfFameData = [];
+        let avatarsData = {};
+        let bioData = {};
+
+        /**
+         * Compile rankingsData from a flat list of game records.
+         * Each game: { date: "DD/MM/YYYY", winner1: name, winner2: name|null }
+         */
+        function buildRankingsFromGames(games) {
+            const result = {};
+
+            games.forEach(game => {
+                if (!game.date) return;
+                const parts = game.date.split('/');
+                if (parts.length < 3) return;
+                const year = parts[2];
+
+                if (!result[year]) result[year] = [];
+
+                if (game.winner1) {
+                    let p = result[year].find(r => r.name === game.winner1);
+                    if (!p) {
+                        p = {name: game.winner1, wins: 0, dates: [], sec: []};
+                        result[year].push(p);
+                    }
+                    p.wins += 1;
+                    p.dates.push(game.date);
+                }
+
+                if (game.winner2) {
+                    let p = result[year].find(r => r.name === game.winner2);
+                    if (!p) {
+                        p = {name: game.winner2, wins: 0, dates: [], sec: []};
+                        result[year].push(p);
+                    }
+                    p.sec.push(game.date);
+                }
+            });
+
+            // Sort each year's list by wins descending
+            Object.keys(result).forEach(yr => {
+                result[yr].sort((a, b) => b.wins - a.wins);
+            });
+
+            return result;
+        }
+
+        /**
+         * Fetch all data from Firebase Realtime Database, populate the global
+         * variables, and then render everything.
+         */
+        async function initData() {
+            try {
+                const fb = await import('./firebase.js');
+                const playerList = await fb.getPlayers();
+                const [rawGames, hof] = await Promise.all([fb.getGames(playerList), fb.getHof(playerList)]);
+
+                // The UI works with player names; resolve ids -> names once, here.
+                const games = rawGames.map(g => ({...g, winner1: g.winner1Name, winner2: g.winner2Name}));
+                const players = playerList.map(p => p.name);
+                hallOfFameData = hof;
+                avatarsData = Object.fromEntries(playerList.filter(p => p.avatar).map(p => [p.name, p.avatar]));
+                bioData = Object.fromEntries(playerList.filter(p => p.bio).map(p => [p.name, p.bio]));
+
+                // Build rankingsData from games
+                rankingsData = buildRankingsFromGames(games);
+
+                // Make sure every registered player appears in the latest year
+                // so they show up in the Players tab even with 0 wins
+                const years = Object.keys(rankingsData).sort((a, b) => b - a);
+                if (years.length > 0) {
+                    const latestYear = years[0];
+                    players.forEach(name => {
+                        if (!rankingsData[latestYear].find(p => p.name === name)) {
+                            rankingsData[latestYear].push({name, wins: 0, dates: [], sec: []});
+                        }
+                    });
+                }
+
+                // Render all sections
+                loadRankings();
+                loadPlayers();
+                loadAddons();
+                loadHallOfFame();
+
+            } catch (err) {
+                console.error('Failed to load data from server:', err);
+                document.getElementById('rankings-container').innerHTML =
+                    `<div class="error"><h2>⚠️ Cannot load data</h2><p>Could not reach Firebase Realtime Database. Please try again.</p></div>`;
+            }
+        }
+
+        // Load rankings and Hall of Fame when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
             initBlinds();
             initGlobalAddon();
             initShareButton();
@@ -952,6 +1044,9 @@
             // Restore active tab
             const lastTab = localStorage.getItem('pokerActiveTab') || 'ranking-tab';
             switchTab(lastTab);
+
+            // Fetch data from Firebase and render
+            await initData();
         });
     </script>
 </body>

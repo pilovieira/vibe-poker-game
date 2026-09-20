@@ -1,0 +1,25 @@
+{
+  "rules": {
+    "---open": {
+      ".read": true,
+      ".write": true
+    },
+    "---public": {
+      ".read": "auth.uid != null",
+      ".write": "auth.uid != null"
+    },
+    "vibe-poker": {
+      ".write": "auth != null && root.child('vibe-poker/admins').child(auth.uid).val() === true",
+      "players": { ".read": true },
+      "games": { ".read": true },
+      "hall_of_fame": { ".read": true },
+      "admins": {
+        "$uid": { ".read": "auth != null && auth.uid === $uid" }
+      }
+    },
+    "$user_id": {
+      ".read": "$user_id === auth.uid",
+      ".write": "$user_id === auth.uid"
+    }
+  }
+}
