@@ -535,7 +535,7 @@
             // Render descending ID (latest games at top)
             const displayGames = [...games].reverse();
 
-            tbody.innerHTML = displayGames.map(game => {
+            tbody.innerHTML = displayGames.map((game, idx) => {
                 const w1Avatar = avatarsData[game.winner1Name];
                 const w2Avatar = game.winner2 ? avatarsData[game.winner2Name] : null;
 
@@ -551,7 +551,7 @@
 
                 return `
                     <tr>
-                        <td style="font-weight: bold; color: #666;">${idx + 1}</td>
+                        <td style="font-weight: bold; color: #666;">${displayGames.length - idx}</td>
                         <td style="font-weight: bold;">${game.date}</td>
                         <td>${w1Display}</td>
                         <td>${w2Display}</td>
