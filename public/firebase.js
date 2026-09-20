@@ -76,14 +76,6 @@ export async function savePlayer({ id, name, bio, avatar }) {
   return pid;
 }
 
-export async function deletePlayer(id) {
-  const [games, hof] = await Promise.all([readMap('games'), readMap('hall_of_fame')]);
-  if (games.some(g => g.winner1 === id || g.winner2 === id) || hof.some(h => h.playerId === id)) {
-    throw new Error('This player has games or Hall of Fame entries and cannot be deleted.');
-  }
-  await remove(node('players', id));
-}
-
 export async function addGame({ date, winner1, winner2 }) {
   if (!date || !winner1) throw new Error('Date and 1st place winner are required.');
   if (!DATE_RE.test(date)) throw new Error('Date must be in format DD/MM/YYYY.');

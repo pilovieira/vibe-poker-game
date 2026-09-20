@@ -128,6 +128,8 @@
             const email = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
+            const btn = form.querySelector('button[type=submit]');
+            btn.classList.add('is-busy');
             try {
                 const cred = await login(email, password);
                 if (!(await isAdmin(cred.user))) {
@@ -138,6 +140,8 @@
                 window.location.href = 'admin.html';
             } catch (err) {
                 showError('Invalid email or password.');
+            } finally {
+                btn.classList.remove('is-busy');
             }
         });
     </script>
