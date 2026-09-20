@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker - Admin Panel</title>
+    <title>Poker - Admin</title>
     <link rel="stylesheet" href="ranking.css">
     <style>
         /* Admin-specific overrides and styling */
@@ -197,26 +197,78 @@
             align-items: center;
             gap: 12px;
         }
+
+        [hidden] { display: none !important; }
+
+        .container { margin-top: 30px; }
+
+        .admin-topbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .login-wrapper {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 380px;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar">
-        <div id="nav-ranking" class="nav-tab" onclick="window.location.href='index.html'">🏆 <span
-                class="tab-text">Ranking</span></div>
-        <div id="nav-players" class="nav-tab" onclick="window.location.href='index.html?tab=players-tab'">👥 <span
-                class="tab-text">Players</span></div>
-        <div id="nav-addons" class="nav-tab" onclick="window.location.href='index.html?tab=addons-tab'">🃏 <span
-                class="tab-text">Game</span></div>
-        <div id="nav-hof" class="nav-tab" onclick="window.location.href='index.html?tab=hof-tab'">⭐ <span class="tab-text">Hall of
-                Fame</span></div>
-        <div id="nav-admin" class="nav-tab active" onclick="void(0)">⚙️ <span
-                class="tab-text">Admin</span></div>
-        <div id="nav-logout" class="nav-tab" onclick="logout()">🚪 <span
-                class="tab-text">Logout</span></div>
-    </nav>
 
-    <div class="container">
+    <!-- Shown while Firebase restores the session -->
+    <div id="boot-view" class="container">
+        <div class="loading"><span class="spinner"></span>Loading...</div>
+    </div>
+
+    <!-- Login (shown when not signed in as admin) -->
+    <div id="login-view" class="container login-wrapper" hidden>
+        <div class="admin-card login-card">
+            <h2 style="text-align: center; border: none;">🔒 Admin Login</h2>
+            <div id="login-alert" class="alert alert-error"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" class="form-control" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn-submit">Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin dashboard (shown when signed in as admin) -->
+    <div id="admin-view" class="container" hidden>
+        <div class="admin-topbar">
+            <button type="button" class="btn-logout" onclick="logout()">🚪 Logout</button>
+        </div>
         <h1>⚙️ Admin Dashboard ⚙️</h1>
 
         <div class="admin-subnav">
@@ -436,19 +488,63 @@
 
         const loadFb = () => import('./firebase.js');
 
+        // Only one of boot / login / admin views is visible at a time.
+        function showView(name) {
+            ['boot', 'login', 'admin'].forEach(v => {
+                document.getElementById(v + '-view').hidden = v !== name;
+            });
+        }
+
         async function logout() {
             try {
                 await (await loadFb()).logout();
             } catch (e) {
                 // ignore
             }
-            window.location.href = 'login.html';
+            showLogin();
         }
+
+        function showLogin() {
+            document.getElementById('login-form').reset();
+            document.getElementById('login-alert').style.display = 'none';
+            showView('login');
+        }
+
+        async function openDashboard() {
+            showView('admin');
+            await Promise.all([fetchPlayers(), fetchGames(), fetchHof()]);
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const alertEl = document.getElementById('login-alert');
+            const btn = event.submitter;
+            alertEl.style.display = 'none';
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            btn.classList.add('is-busy');
+            try {
+                const fb = await loadFb();
+                const cred = await fb.login(email, password);
+                if (!(await fb.isAdmin(cred.user))) {
+                    await fb.logout();
+                    throw new Error('This account is not an admin.');
+                }
+                await openDashboard();
+            } catch (err) {
+                alertEl.textContent = err.message === 'This account is not an admin.'
+                    ? err.message : 'Invalid email or password.';
+                alertEl.style.display = 'block';
+            } finally {
+                btn.classList.remove('is-busy');
+            }
+        });
 
         // Surface permission errors (expired session / not an admin) as a login redirect.
         function handleWriteError(err) {
             if (err && /permission_denied/i.test(err.code || err.message || '')) {
-                window.location.href = 'login.html';
+                showLogin();
             }
             showMsg(err.message, false);
         }
@@ -771,13 +867,11 @@
         document.addEventListener('DOMContentLoaded', async () => {
             // Gate the page: only signed-in admins may stay.
             const fb = await loadFb();
-            if (!(await fb.isAdmin(await fb.whenAuthReady()))) {
-                window.location.href = 'login.html';
-                return;
+            if (await fb.isAdmin(await fb.whenAuthReady())) {
+                await openDashboard();
+            } else {
+                showLogin();
             }
-            await fetchPlayers();
-            await fetchGames();
-            await fetchHof();
         });
     </script>
 </body>

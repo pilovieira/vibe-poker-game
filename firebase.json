@@ -20,6 +20,19 @@
           }
         ]
       }
+    ],
+    "cleanUrls": true,
+    "redirects": [
+      {
+        "source": "/login",
+        "destination": "/admin",
+        "type": 301
+      },
+      {
+        "source": "/login.html",
+        "destination": "/admin",
+        "type": 301
+      }
     ]
   }
 }
