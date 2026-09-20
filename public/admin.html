@@ -198,6 +198,45 @@
             gap: 12px;
         }
 
+
+        .admin-grid { display: grid; gap: 30px; }
+        .admin-grid-2 { grid-template-columns: 1fr 1fr; }
+        .admin-grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+        /* ---- Mobile ---- */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .container { margin-top: 12px; }
+
+            .admin-grid-2, .admin-grid-3 { grid-template-columns: 1fr; gap: 0; }
+
+            .admin-card { padding: 18px 16px; margin-bottom: 20px; }
+            .admin-card h2 { font-size: 1.3em; }
+            h1 { font-size: 1.8em; margin-bottom: 20px; }
+
+            /* Full-width segmented tabs */
+            .admin-subnav { gap: 8px; margin-bottom: 20px; }
+            .subnav-btn { flex: 1 1 0; padding: 10px 6px; font-size: 0.85em; }
+
+            /* 16px inputs stop iOS Safari from zooming on focus; bigger tap targets */
+            .form-control { font-size: 16px; padding: 12px; }
+            .btn-submit, .btn-logout { min-height: 44px; }
+            .btn-delete { padding: 8px 12px; min-height: 36px; }
+
+            .player-list-item { padding: 8px 10px; }
+            #players-list-container { max-height: 320px !important; }
+
+            /* Tables: keep them readable, scroll sideways if still too wide */
+            .admin-table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .admin-table th, .admin-table td { padding: 8px 6px; font-size: 0.85em; white-space: nowrap; }
+            .admin-table th:first-child, .admin-table td:first-child { display: none; }
+        }
+
+        @media (max-width: 420px) {
+            .subnav-btn { font-size: 0.75em; }
+            .admin-table th, .admin-table td { padding: 8px 4px; font-size: 0.8em; }
+        }
+
         [hidden] { display: none !important; }
 
         .container { margin-top: 30px; }
@@ -281,7 +320,7 @@
 
         <!-- 1. Players Manager Tab -->
         <div id="tab-players" class="tab-content active">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <div class="admin-grid admin-grid-2">
                 <!-- Add Player Form -->
                 <div class="admin-card">
                     <h2 id="player-form-title">➕ Add Player</h2>
@@ -325,7 +364,7 @@
             <div class="admin-card">
                 <h2>➕ Register Game</h2>
                 <form id="add-game-form" onsubmit="handleAddGame(event)">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="admin-grid admin-grid-3">
                         <div class="form-group">
                             <label for="game-date">Game Date</label>
                             <input type="text" id="game-date" class="form-control" placeholder="DD/MM/YYYY" required>
@@ -378,7 +417,7 @@
             <div class="admin-card">
                 <h2>➕ Add Hall of Fame Entry</h2>
                 <form id="add-hof-form" onsubmit="handleAddHof(event)">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="admin-grid admin-grid-3">
                         <div class="form-group">
                             <label for="hof-date">Date</label>
                             <input type="text" id="hof-date" class="form-control" placeholder="DD/MM/YYYY" required>
