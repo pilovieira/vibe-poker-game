@@ -117,6 +117,7 @@ export function resizeAvatar(file, size = 256) {
 // ---- auth ----------------------------------------------------------------
 export const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
 export const logout = () => signOut(auth);
+export const currentUser = () => auth.currentUser;
 
 // Resolves with the current user (or null) once Firebase has restored the session.
 export const whenAuthReady = () => new Promise(resolve => {

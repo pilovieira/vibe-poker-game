@@ -244,7 +244,18 @@
         .admin-topbar {
             display: flex;
             justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
             margin-bottom: 10px;
+        }
+
+        .user-email {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.9em;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .btn-logout {
@@ -306,6 +317,7 @@
     <!-- Admin dashboard (shown when signed in as admin) -->
     <div id="admin-view" class="container" hidden>
         <div class="admin-topbar">
+            <span id="user-email" class="user-email"></span>
             <button type="button" class="btn-logout" onclick="logout()">🚪 Logout</button>
         </div>
         <h1>⚙️ Admin Dashboard ⚙️</h1>
@@ -550,6 +562,8 @@
         }
 
         async function openDashboard() {
+            const user = (await loadFb()).currentUser();
+            document.getElementById('user-email').textContent = user ? '👤 ' + user.email : '';
             showView('admin');
             await Promise.all([fetchPlayers(), fetchGames(), fetchHof()]);
         }
