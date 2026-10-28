@@ -565,7 +565,8 @@
             const user = (await loadFb()).currentUser();
             document.getElementById('user-email').textContent = user ? '👤 ' + user.email : '';
             showView('admin');
-            await Promise.all([fetchPlayers(), fetchGames(), fetchHof()]);
+            await fetchPlayers(); // games/HoF resolve player names from it
+            await Promise.all([fetchGames(), fetchHof()]);
         }
 
         document.getElementById('login-form').addEventListener('submit', async (event) => {
