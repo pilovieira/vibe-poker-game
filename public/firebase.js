@@ -98,7 +98,8 @@ export async function savePlayer({ id, name, bio, avatar }) {
 }
 
 // `entries`: [{ id, addons }] - who played and how many buy-ins/add-ons each one made (>= 1).
-export async function addGame({ date, winner1, winner2, buyin, entries = [] }) {
+// With `id` it replaces that game (edit), otherwise it creates a new one.
+export async function saveGame({ id, date, winner1, winner2, buyin, entries = [] }) {
   if (!date || !winner1) throw new Error('Date and 1st place winner are required.');
   if (!DATE_RE.test(date)) throw new Error('Date must be in format DD/MM/YYYY.');
   const game = { date, winner1, winner2: winner2 || null };
@@ -115,7 +116,7 @@ export async function addGame({ date, winner1, winner2, buyin, entries = [] }) {
     game.buyin = Number(buyin);
     game.players = Object.fromEntries(entries.map(e => [e.id, e.addons]));
   }
-  await set(push(node('games')), game);
+  await set(id ? node('games', id) : push(node('games')), game);
 }
 
 export async function deleteGame(id) {

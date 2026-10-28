@@ -379,8 +379,9 @@
         <div id="tab-games" class="tab-content">
             <!-- Add Game Form -->
             <div class="admin-card">
-                <h2>➕ Register Game</h2>
+                <h2 id="game-form-title">➕ Register Game</h2>
                 <form id="add-game-form" onsubmit="handleAddGame(event)">
+                    <input type="hidden" id="game-id">
                     <div class="admin-grid admin-grid-3">
                         <div class="form-group">
                             <label for="game-date">Game Date</label>
@@ -410,7 +411,8 @@
                             </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn-submit" style="margin-top: 10px;">Save Game Result</button>
+                    <button type="submit" class="btn-submit" id="game-submit-btn" style="margin-top: 10px;">Save Game Result</button>
+                    <button type="button" class="btn-submit" id="game-cancel-btn" style="display: none; background: #777; margin-top: 10px;" onclick="resetGameForm()">Cancel edit</button>
                 </form>
             </div>
 
@@ -772,7 +774,10 @@
                         <td>${w1Display}</td>
                         <td>${w2Display}</td>
                         <td>${game.prizes ? `${game.entries.length} players · R$ ${game.prizes.pot}` : '<span style="color: #999;">-</span>'}</td>
-                        <td><button class="btn-delete" onclick="handleDeleteGame('${game.id}', this)">Delete</button></td>
+                        <td>
+                            <button class="btn-delete" style="background: #1a7a42;" onclick="handleEditGame('${game.id}')">Edit</button>
+                            <button class="btn-delete" onclick="handleDeleteGame('${game.id}', this)">Delete</button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -879,6 +884,38 @@
             }
         }
 
+        function resetGameForm() {
+            document.getElementById('add-game-form').reset();
+            document.getElementById('game-id').value = '';
+            document.getElementById('game-form-title').textContent = '➕ Register Game';
+            document.getElementById('game-submit-btn').textContent = 'Save Game Result';
+            document.getElementById('game-cancel-btn').style.display = 'none';
+            document.querySelectorAll('#game-players-list input[type=checkbox]').forEach(cb => { cb.checked = false; });
+            renderGamePlayers();
+        }
+
+        function handleEditGame(id) {
+            const g = games.find(x => x.id === id);
+            if (!g) return;
+            resetGameForm();
+            document.getElementById('game-id').value = g.id;
+            document.getElementById('game-date').value = g.date;
+            document.getElementById('game-buyin').value = g.buyin || 10;
+            g.entries.forEach(e => {
+                const cb = document.querySelector(`#game-players-list input[data-id="${e.id}"]`);
+                if (!cb) return;
+                cb.checked = true;
+                document.querySelector(`[data-addons="${e.id}"]`).value = e.addons;
+            });
+            updateGamePot(); // narrows the winner selects synchronously
+            document.getElementById('game-winner1').value = g.winner1;
+            document.getElementById('game-winner2').value = g.winner2 || '';
+            document.getElementById('game-form-title').textContent = '✏️ Edit Game';
+            document.getElementById('game-submit-btn').textContent = 'Save Game';
+            document.getElementById('game-cancel-btn').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         async function handleAddGame(event) {
             event.preventDefault();
             const submitBtn = event.submitter;
@@ -895,19 +932,25 @@
 
             if (submitBtn) submitBtn.classList.add('is-busy');
             try {
-                await (await loadFb()).addGame({
+                await (await loadFb()).saveGame({
+                    id: document.getElementById('game-id').value || undefined,
                     date, winner1, winner2,
                     buyin: document.getElementById('game-buyin').value,
                     entries: readGameEntries()
                 });
 
                 showMsg('Game results saved successfully!');
+                const wasEdit = !!document.getElementById('game-id').value;
 
-                // Reset form fields except date
-                document.getElementById('game-winner1').value = '';
-                document.getElementById('game-winner2').value = '';
-                document.querySelectorAll('#game-players-list input[type=checkbox]').forEach(cb => { cb.checked = false; });
-                renderGamePlayers();
+                if (wasEdit) {
+                    resetGameForm();
+                } else {
+                    // Reset form fields except date
+                    document.getElementById('game-winner1').value = '';
+                    document.getElementById('game-winner2').value = '';
+                    document.querySelectorAll('#game-players-list input[type=checkbox]').forEach(cb => { cb.checked = false; });
+                    renderGamePlayers();
+                }
 
                 await fetchGames();
             } catch (err) {
