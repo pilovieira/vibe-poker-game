@@ -387,27 +387,29 @@
             return trophiesHTML;
         }
 
-        // Function to create ranking HTML for a year
-        function createYearSection(year, rankings) {
-            const hasHistory = rankings.some(p => (p.dates && p.dates.length > 0) || (p.sec && p.sec.length > 0));
-            const historyBtn = hasHistory
-                ? `<button class="year-history-btn" onclick="showYearHistory('${year}')" title="Show all winners">📜 History</button>`
-                : '';
+        // Per-year ranking mode: 'win' (wins) or 'rate' (wins/games). Rate only exists for years with data.
+        const rankMode = {};
 
+        // Players with at least one win in that year, best rate first (rate 0 is left out)
+        function rateRankings(year) {
+            return (rankingsData[year] || [])
+                .map(p => ({...p, rate: rateStats[year] && rateStats[year][p.name]}))
+                .filter(p => p.rate && p.rate.wins > 0)
+                .map(p => ({...p, value: p.rate.wins / p.rate.games}))
+                .sort((x, y) => y.value - x.value || y.rate.wins - x.rate.wins);
+        }
+
+        function rankingItemHtml(person, year, rank, mode) {
+            const avatarUrl = avatarsData[person.name];
+            const avatarDisplay = avatarUrl
+                ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${person.name}"></div>`
+                : `<div class="ranking-avatar small">👤</div>`;
+            const stats = mode === 'rate'
+                ? `<span class="win-count">${rateText(person.rate)}</span>`
+                : `${generateTrophies(person.wins)}
+                                        <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
+                                        ${rateBadge(person.name, year)}`;
             return `
-                <div class="year-section">
-                    <div class="year-header-container">
-                        <h2 class="year-header">${year}</h2>
-                        ${historyBtn}
-                    </div>
-                    <ul class="ranking-list">
-                        ${rankings.map((person, index) => {
-                const rank = rankings.findIndex(p => p.wins === person.wins) + 1;
-                const avatarUrl = avatarsData[person.name];
-                const avatarDisplay = avatarUrl
-                    ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${person.name}"></div>`
-                    : `<div class="ranking-avatar small">👤</div>`;
-                return `
                             <li class="ranking-item ${getRankClass(rank)}" data-name="${person.name}" data-year="${year}" data-dates='${JSON.stringify(person.dates || [])}'>
                                 ${getRankDisplay(rank)}
                                 ${avatarDisplay}
@@ -416,17 +418,57 @@
                                         ${person.name}
                                     </div>
                                     <div class="trophies">
-                                        ${generateTrophies(person.wins)}
-                                        <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
-                                        ${rateBadge(person.name, year)}
+                                        ${stats}
                                     </div>
                                 </div>
                             </li>
                         `;
-            }).join('')}
+        }
+
+        // Function to create ranking HTML for a year
+        function createYearSection(year) {
+            const hasRate = !!rateStats[year];
+            const mode = hasRate && rankMode[year] === 'rate' ? 'rate' : 'win';
+            const rankings = mode === 'rate' ? rateRankings(year) : rankingsData[year].filter(p => p.wins > 0);
+            const hasHistory = (rankingsData[year] || []).some(p => (p.dates && p.dates.length > 0) || (p.sec && p.sec.length > 0));
+            const historyBtn = hasHistory
+                ? `<button class="year-history-btn" onclick="showYearHistory('${year}')" title="Show all winners">📜 History</button>`
+                : '';
+            const modeSwitch = hasRate ? `
+                        <div class="year-mode-switch">
+                            <button class="${mode === 'win' ? 'active' : ''}" onclick="setRankMode('${year}', 'win')">Win</button>
+                            <button class="${mode === 'rate' ? 'active' : ''}" onclick="setRankMode('${year}', 'rate')">Rate</button>
+                        </div>` : '';
+            const key = p => mode === 'rate' ? p.value : p.wins;
+
+            return `
+                <div class="year-section" id="year-section-${year}">
+                    <div class="year-header-container">
+                        ${modeSwitch}
+                        <h2 class="year-header">${year}</h2>
+                        ${historyBtn}
+                    </div>
+                    <ul class="ranking-list">
+                        ${rankings.map(person => rankingItemHtml(person, year, rankings.findIndex(p => key(p) === key(person)) + 1, mode)).join('')}
                     </ul>
                 </div>
             `;
+        }
+
+        function setRankMode(year, mode) {
+            rankMode[year] = mode;
+            const section = document.getElementById(`year-section-${year}`);
+            section.outerHTML = createYearSection(year);
+            bindRankingItems(document.getElementById(`year-section-${year}`));
+        }
+
+        function bindRankingItems(root) {
+            root.querySelectorAll('.ranking-item').forEach(rankingItem => {
+                rankingItem.addEventListener('click', function () {
+                    showWinDates(this.getAttribute('data-name'), JSON.parse(this.getAttribute('data-dates')),
+                        this.getAttribute('data-year'));
+                });
+            });
         }
 
         // Function to load and display rankings
@@ -444,7 +486,7 @@
                 years.forEach(year => {
                     const activeRankings = rankingsData[year].filter(p => p.wins > 0);
                     if (activeRankings.length > 0) {
-                        html += createYearSection(year, activeRankings);
+                        html += createYearSection(year);
                     }
                 });
 
@@ -491,14 +533,7 @@
                 globalContainer.innerHTML = globalHtml;
 
                 // Add event listeners to all ranking items
-                document.querySelectorAll('.ranking-item').forEach(rankingItem => {
-                    rankingItem.addEventListener('click', function () {
-                        const name = this.getAttribute('data-name');
-                        const year = this.getAttribute('data-year');
-                        const dates = JSON.parse(this.getAttribute('data-dates'));
-                        showWinDates(name, dates, year);
-                    });
-                });
+                bindRankingItems(container);
 
             } catch (error) {
                 console.error('Error loading rankings:', error);
