@@ -399,12 +399,12 @@
                 .sort((x, y) => y.value - x.value || y.rate.wins - x.rate.wins);
         }
 
-        // Biggest payers of the year: R$ spent on buy-ins and add-ons
+        // Biggest payers of the year: number of buy-ins and add-ons (R$ paid breaks ties)
         function buyRankings(year) {
             return Object.entries(rateStats[year] || {})
                 .filter(([, r]) => r.paid > 0)
-                .map(([name, r]) => ({name, rate: r, value: r.paid, dates: ((rankingsData[year] || []).find(p => p.name === name) || {}).dates}))
-                .sort((x, y) => y.value - x.value || y.rate.buys - x.rate.buys);
+                .map(([name, r]) => ({name, rate: r, value: r.buys, dates: ((rankingsData[year] || []).find(p => p.name === name) || {}).dates}))
+                .sort((x, y) => y.value - x.value || y.rate.paid - x.rate.paid);
         }
 
         function rankingItemHtml(person, year, rank, mode) {
@@ -413,7 +413,7 @@
                 ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${person.name}"></div>`
                 : `<div class="ranking-avatar small">👤</div>`;
             const stats = mode === 'buy'
-                ? `<span class="win-count">R$ ${person.rate.paid}</span> <span class="win-rate">${person.rate.buys} buy-in${person.rate.buys !== 1 ? 's' : ''}</span>`
+                ? `<span class="win-count">${person.rate.buys}</span>`
                 : mode === 'rate'
                 ? `<span class="win-count">${rateText(person.rate)}</span>`
                 : `${generateTrophies(person.wins)}
