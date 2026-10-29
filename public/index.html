@@ -118,6 +118,7 @@
         <!-- Games history -->
         <div id="games-tab" class="tab-content">
             <h1>📜 History 📜</h1>
+            <div id="games-year-nav" class="year-nav"></div>
             <div id="games-container" class="games-list">
                 <div class="loading"><span class="spinner"></span>Loading games...</div>
             </div>
@@ -1006,6 +1007,13 @@
             return `<span class="win-rate">${r.wins}/${r.games} · ${Math.round(r.wins * 100 / r.games)}%</span>`;
         }
 
+        let historyYear = null;
+
+        function setHistoryYear(year) {
+            historyYear = year;
+            loadGames();
+        }
+
         function loadGames() {
             const container = document.getElementById('games-container');
             if (!gamesData.length) {
@@ -1018,7 +1026,12 @@
                 const img = av ? `<img src="${av}" alt="${escapeHtml(name)}">` : '👤';
                 return `<span class="game-winner">${medal} <span class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;">${img}</span> ${escapeHtml(name)}</span>`;
             };
-            container.innerHTML = [...gamesData].reverse().map(g => {
+            // One page per year, latest first
+            const years = [...new Set(gamesData.map(g => g.date.split('/')[2]))].sort().reverse();
+            if (!years.includes(historyYear)) historyYear = years[0];
+            document.getElementById('games-year-nav').innerHTML = years.map(y =>
+                `<button type="button" class="${y === historyYear ? 'active' : ''}" onclick="setHistoryYear('${y}')">${y}</button>`).join('');
+            container.innerHTML = [...gamesData].reverse().filter(g => g.date.endsWith('/' + historyYear)).map(g => {
                 const p = g.prizes;
                 const money = p ? `
                     <div class="game-pot">Buy-in R$ ${g.buyin} · Pot R$ ${p.pot} · ${p.addons} buy-ins · ${p.chips.toLocaleString()} chips</div>` : '';

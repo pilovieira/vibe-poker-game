@@ -199,6 +199,9 @@
         }
 
 
+        .year-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .year-nav button { padding: 6px 14px; border: 1px solid #1a7a42; border-radius: 16px; background: white; color: #1a7a42; font-weight: bold; cursor: pointer; }
+        .year-nav button.active { background: #1a7a42; color: white; }
         .game-players-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
         .game-player-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
         .game-player-row label { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; cursor: pointer; }
@@ -419,6 +422,7 @@
             <!-- Games History Table -->
             <div class="admin-card">
                 <h2>📜 Games History</h2>
+                <div id="games-year-nav" class="year-nav"></div>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -743,6 +747,13 @@
             preview.textContent = `${entries.length} players · ${r.addons} buy-ins · Pot R$ ${r.pot} · 🥇 R$ ${r.first} · 🥈 R$ ${r.second}`;
         }
 
+        let gamesYear = null;
+
+        function setGamesYear(year) {
+            gamesYear = year;
+            renderGames();
+        }
+
         function renderGames() {
             const tbody = document.getElementById('games-table-body');
             if (games.length === 0) {
@@ -750,10 +761,18 @@
                 return;
             }
 
-            // Render descending ID (latest games at top)
-            const displayGames = [...games].reverse();
+            // One page per year; the # keeps counting across all years.
+            const years = [...new Set(games.map(g => g.date.split('/')[2]))].sort().reverse();
+            if (!years.includes(gamesYear)) gamesYear = years[0];
+            document.getElementById('games-year-nav').innerHTML = years.map(y =>
+                `<button type="button" class="${y === gamesYear ? 'active' : ''}" onclick="setGamesYear('${y}')">${y}</button>`).join('');
 
-            tbody.innerHTML = displayGames.map((game, idx) => {
+            // Render descending ID (latest games at top)
+            const all = [...games].reverse();
+            const displayGames = all.map((game, i) => ({ game, n: all.length - i }))
+                .filter(x => x.game.date.endsWith('/' + gamesYear));
+
+            tbody.innerHTML = displayGames.map(({ game, n }) => {
                 const w1Avatar = avatarsData[game.winner1Name];
                 const w2Avatar = game.winner2 ? avatarsData[game.winner2Name] : null;
 
@@ -769,7 +788,7 @@
 
                 return `
                     <tr>
-                        <td style="font-weight: bold; color: #666;">${displayGames.length - idx}</td>
+                        <td style="font-weight: bold; color: #666;">${n}</td>
                         <td style="font-weight: bold;">${game.date}</td>
                         <td>${w1Display}</td>
                         <td>${w2Display}</td>
