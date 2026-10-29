@@ -387,7 +387,7 @@
             return trophiesHTML;
         }
 
-        // Per-year ranking mode: 'win' (wins) or 'rate' (wins/games). Rate only exists for years with data.
+        // Per-year ranking mode: 'win' (wins), 'rate' (wins/games) or 'buy' (R$ paid). Rate and buy only exist for years with data.
         const rankMode = {};
 
         // Players with at least one win in that year, best rate first (rate 0 is left out)
@@ -399,12 +399,22 @@
                 .sort((x, y) => y.value - x.value || y.rate.wins - x.rate.wins);
         }
 
+        // Biggest payers of the year: R$ spent on buy-ins and add-ons
+        function buyRankings(year) {
+            return Object.entries(rateStats[year] || {})
+                .filter(([, r]) => r.paid > 0)
+                .map(([name, r]) => ({name, rate: r, value: r.paid, dates: ((rankingsData[year] || []).find(p => p.name === name) || {}).dates}))
+                .sort((x, y) => y.value - x.value || y.rate.buys - x.rate.buys);
+        }
+
         function rankingItemHtml(person, year, rank, mode) {
             const avatarUrl = avatarsData[person.name];
             const avatarDisplay = avatarUrl
                 ? `<div class="ranking-avatar small"><img src="${avatarUrl}" alt="${person.name}"></div>`
                 : `<div class="ranking-avatar small">👤</div>`;
-            const stats = mode === 'rate'
+            const stats = mode === 'buy'
+                ? `<span class="win-count">R$ ${person.rate.paid}</span> <span class="win-rate">${person.rate.buys} buy-in${person.rate.buys !== 1 ? 's' : ''}</span>`
+                : mode === 'rate'
                 ? `<span class="win-count">${rateText(person.rate)}</span>`
                 : `${generateTrophies(person.wins)}
                                         <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
@@ -428,8 +438,10 @@
         // Function to create ranking HTML for a year
         function createYearSection(year) {
             const hasRate = !!rateStats[year];
-            const mode = hasRate && rankMode[year] === 'rate' ? 'rate' : 'win';
-            const rankings = mode === 'rate' ? rateRankings(year) : rankingsData[year].filter(p => p.wins > 0);
+            const mode = hasRate && ['rate', 'buy'].includes(rankMode[year]) ? rankMode[year] : 'win';
+            const rankings = mode === 'rate' ? rateRankings(year)
+                : mode === 'buy' ? buyRankings(year)
+                : rankingsData[year].filter(p => p.wins > 0);
             const hasHistory = (rankingsData[year] || []).some(p => (p.dates && p.dates.length > 0) || (p.sec && p.sec.length > 0));
             const historyBtn = hasHistory
                 ? `<button class="year-history-btn" onclick="showYearHistory('${year}')" title="Show all winners">📜 History</button>`
@@ -438,8 +450,9 @@
                         <div class="year-mode-switch">
                             <button class="${mode === 'win' ? 'active' : ''}" onclick="setRankMode('${year}', 'win')">Win</button>
                             <button class="${mode === 'rate' ? 'active' : ''}" onclick="setRankMode('${year}', 'rate')">Rate</button>
+                            <button class="${mode === 'buy' ? 'active' : ''}" onclick="setRankMode('${year}', 'buy')">Buy</button>
                         </div>` : '';
-            const key = p => mode === 'rate' ? p.value : p.wins;
+            const key = p => mode === 'win' ? p.wins : p.value;
 
             return `
                 <div class="year-section" id="year-section-${year}">
@@ -1015,20 +1028,23 @@
             return g.entries.length ? g.entries.map(e => e.name) : [g.winner1Name, g.winner2Name].filter(Boolean);
         }
 
-        // Only years with a players list per game have a meaningful rate (older years have winners only).
+        // Only years with a players list per game have meaningful stats (older years have winners only).
+        // Per player and year: games played, wins, buy-ins/add-ons made and R$ paid.
         function buildRateStats(games) {
             const stats = {};
-            const bump = (bucket, name, won) => {
-                const r = bucket[name] || (bucket[name] = {games: 0, wins: 0});
-                r.games += 1;
-                if (won) r.wins += 1;
-            };
             const dataYears = new Set(games.filter(g => g.entries.length).map(g => g.date.split('/')[2]));
             games.forEach(g => {
                 const year = g.date.split('/')[2];
                 if (!dataYears.has(year)) return;
                 stats[year] = stats[year] || {};
-                gameParticipants(g).forEach(name => bump(stats[year], name, name === g.winner1Name));
+                const addons = Object.fromEntries(g.entries.map(e => [e.name, e.addons]));
+                gameParticipants(g).forEach(name => {
+                    const r = stats[year][name] || (stats[year][name] = {games: 0, wins: 0, buys: 0, paid: 0});
+                    r.games += 1;
+                    if (name === g.winner1Name) r.wins += 1;
+                    r.buys += addons[name] || 0;
+                    r.paid += (addons[name] || 0) * (g.buyin || 0);
+                });
             });
             return stats;
         }
