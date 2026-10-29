@@ -522,7 +522,6 @@
                                     <div class="person-name">${person.name}</div>
                                     <div class="trophies">
                                         <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
-                                        ${rateBadgeTotal(person.name)}
                                     </div>
                                 </div>
                             </li>
@@ -1040,15 +1039,6 @@
         function rateBadge(name, year) {
             const r = rateStats[year] && rateStats[year][name];
             return r ? `<span class="win-rate">${rateText(r)}</span>` : '';
-        }
-
-        // Global ranking: wins/games summed over every year that has data (2026 onwards)
-        function rateBadgeTotal(name) {
-            const total = Object.values(rateStats).reduce((t, year) => {
-                const r = year[name];
-                return r ? {games: t.games + r.games, wins: t.wins + r.wins} : t;
-            }, {games: 0, wins: 0});
-            return total.games ? `<span class="win-rate">${rateText(total)}</span>` : '';
         }
 
         let historyYear = null;
