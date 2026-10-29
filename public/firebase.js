@@ -42,12 +42,33 @@ export async function getPlayers() {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// Games: { id, date, winner1, winner2 (player ids), winner1Name, winner2Name }
+// Pot rules (same as the live Game tab): every buy-in/add-on costs `buyin`, each is worth 5000 chips,
+// 1st gets 70% rounded up to a multiple of 10 and 2nd gets the rest.
+export function calcPot(buyin, entries) {
+  const addons = entries.reduce((sum, e) => sum + e.addons, 0);
+  const pot = addons * (Number(buyin) || 0);
+  const first = Math.ceil((pot * 0.7) / 10) * 10;
+  return { addons, chips: addons * 5000, pot, first, second: pot - first };
+}
+
+// Games: { id, date, buyin, winner1, winner2 (player ids), winner1Name, winner2Name,
+//          entries: [{ id, name, addons }] (empty for old games), prizes: calcPot() or null }
 export async function getGames(players) {
   players = players || await getPlayers();
   const names = Object.fromEntries(players.map(p => [p.id, p.name]));
   return (await readMap('games'))
-    .map(g => ({ ...g, winner1Name: names[g.winner1] || '?', winner2Name: g.winner2 ? (names[g.winner2] || '?') : null }))
+    .map(g => {
+      const entries = Object.entries(g.players || {})
+        .map(([id, addons]) => ({ id, name: names[id] || '?', addons }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return {
+        ...g,
+        winner1Name: names[g.winner1] || '?',
+        winner2Name: g.winner2 ? (names[g.winner2] || '?') : null,
+        entries,
+        prizes: entries.length ? calcPot(g.buyin, entries) : null
+      };
+    })
     .sort((a, b) => dateKey(a.date).localeCompare(dateKey(b.date)));
 }
 
@@ -76,10 +97,26 @@ export async function savePlayer({ id, name, bio, avatar }) {
   return pid;
 }
 
-export async function addGame({ date, winner1, winner2 }) {
+// `entries`: [{ id, addons }] - who played and how many buy-ins/add-ons each one made (>= 1).
+// With `id` it replaces that game (edit), otherwise it creates a new one.
+export async function saveGame({ id, date, winner1, winner2, buyin, entries = [] }) {
   if (!date || !winner1) throw new Error('Date and 1st place winner are required.');
   if (!DATE_RE.test(date)) throw new Error('Date must be in format DD/MM/YYYY.');
-  await set(push(node('games')), { date, winner1, winner2: winner2 || null });
+  const game = { date, winner1, winner2: winner2 || null };
+  if (entries.length) {
+    const ids = entries.map(e => e.id);
+    if (new Set(ids).size !== ids.length) throw new Error('Duplicated player in the game.');
+    if (!ids.includes(winner1) || (winner2 && !ids.includes(winner2))) {
+      throw new Error('Winners must be among the game players.');
+    }
+    if (entries.some(e => !Number.isInteger(e.addons) || e.addons < 1)) {
+      throw new Error('Each player needs at least 1 buy-in.');
+    }
+    if (!(Number(buyin) > 0)) throw new Error('Buy-in must be greater than zero.');
+    game.buyin = Number(buyin);
+    game.players = Object.fromEntries(entries.map(e => [e.id, e.addons]));
+  }
+  await set(id ? node('games', id) : push(node('games')), game);
 }
 
 export async function deleteGame(id) {

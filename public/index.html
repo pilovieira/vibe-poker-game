@@ -16,6 +16,8 @@
                 class="tab-text">Players</span></div>
         <div id="nav-addons" class="nav-tab" onclick="switchTab('addons-tab', this)">🃏 <span
                 class="tab-text">Game</span></div>
+        <div id="nav-games" class="nav-tab" onclick="switchTab('games-tab', this)">📜 <span
+                class="tab-text">History</span></div>
         <div id="nav-hof" class="nav-tab" onclick="switchTab('hof-tab', this)">⭐ <span class="tab-text">Hall of
                 Fame</span></div>
     </nav>
@@ -111,6 +113,15 @@
             <ul id="addon-list" class="addon-list">
                 <li class="loading" style="color: white; font-size: 1.1em; padding: 20px;"><span class="spinner"></span>Loading players...</li>
             </ul>
+        </div>
+
+        <!-- Games history -->
+        <div id="games-tab" class="tab-content">
+            <h1>📜 History 📜</h1>
+            <div id="games-year-nav" class="year-nav"></div>
+            <div id="games-container" class="games-list">
+                <div class="loading"><span class="spinner"></span>Loading games...</div>
+            </div>
         </div>
 
         <!-- Hall of Fame -->
@@ -407,6 +418,7 @@
                                     <div class="trophies">
                                         ${generateTrophies(person.wins)}
                                         <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
+                                        ${rateBadge(person.name, year)}
                                     </div>
                                 </div>
                             </li>
@@ -468,6 +480,7 @@
                                     <div class="person-name">${person.name}</div>
                                     <div class="trophies">
                                         <span class="win-count">${person.wins} win${person.wins !== 1 ? 's' : ''}</span>
+                                        ${rateBadge(person.name, 'all')}
                                     </div>
                                 </div>
                             </li>
@@ -960,6 +973,81 @@
         let hallOfFameData = [];
         let avatarsData = {};
         let bioData = {};
+        let gamesData = [];
+        let rateStats = {}; // { year | 'all': { name: { games, wins } } }
+
+        // Games a player took part in: the players list, or - for old games without one - the winners.
+        function gameParticipants(g) {
+            return g.entries.length ? g.entries.map(e => e.name) : [g.winner1Name, g.winner2Name].filter(Boolean);
+        }
+
+        function buildRateStats(games) {
+            const stats = {all: {}};
+            const bump = (bucket, name, won) => {
+                const r = bucket[name] || (bucket[name] = {games: 0, wins: 0});
+                r.games += 1;
+                if (won) r.wins += 1;
+            };
+            games.forEach(g => {
+                const year = g.date.split('/')[2];
+                stats[year] = stats[year] || {};
+                gameParticipants(g).forEach(name => {
+                    const won = name === g.winner1Name;
+                    bump(stats[year], name, won);
+                    bump(stats.all, name, won);
+                });
+            });
+            return stats;
+        }
+
+        // "1/3 · 33%" (wins / games played)
+        function rateBadge(name, scope) {
+            const r = rateStats[scope] && rateStats[scope][name];
+            if (!r) return '';
+            return `<span class="win-rate">${r.wins}/${r.games} · ${Math.round(r.wins * 100 / r.games)}%</span>`;
+        }
+
+        let historyYear = null;
+
+        function setHistoryYear(year) {
+            historyYear = year;
+            loadGames();
+        }
+
+        function loadGames() {
+            const container = document.getElementById('games-container');
+            if (!gamesData.length) {
+                container.innerHTML = '<p style="color: white; text-align: center;">No games recorded.</p>';
+                return;
+            }
+            const who = (name, medal) => {
+                if (!name) return '';
+                const av = avatarsData[name];
+                const img = av ? `<img src="${av}" alt="${escapeHtml(name)}">` : '👤';
+                return `<span class="game-winner">${medal} <span class="ranking-avatar small" style="width: 24px; height: 24px; margin: 0;">${img}</span> ${escapeHtml(name)}</span>`;
+            };
+            // One page per year, latest first
+            const years = [...new Set(gamesData.map(g => g.date.split('/')[2]))].sort().reverse();
+            if (!years.includes(historyYear)) historyYear = years[0];
+            document.getElementById('games-year-nav').innerHTML = years.map(y =>
+                `<button type="button" class="${y === historyYear ? 'active' : ''}" onclick="setHistoryYear('${y}')">${y}</button>`).join('');
+            container.innerHTML = [...gamesData].reverse().filter(g => g.date.endsWith('/' + historyYear)).map(g => {
+                const p = g.prizes;
+                const money = p ? `
+                    <div class="game-pot">Buy-in R$ ${g.buyin} · Pot R$ ${p.pot} · ${p.addons} buy-ins · ${p.chips.toLocaleString()} chips</div>` : '';
+                const prize = (amount) => p ? ` <strong>R$ ${amount}</strong>` : '';
+                const players = g.entries.length ? `
+                    <div class="game-players">${g.entries.map(e => `<span class="game-player-chip">${escapeHtml(e.name)}${e.addons > 1 ? ` ×${e.addons}` : ''}</span>`).join('')}</div>` : '';
+                return `
+                    <div class="game-card">
+                        <div class="game-date">${g.date}</div>
+                        <div class="game-podium">${who(g.winner1Name, '🥇')}${prize(p && p.first)}</div>
+                        <div class="game-podium">${who(g.winner2Name, '🥈')}${g.winner2Name ? prize(p && p.second) : ''}</div>
+                        ${money}
+                        ${players}
+                    </div>`;
+            }).join('');
+        }
 
         /**
          * Compile rankingsData from a flat list of game records.
@@ -1021,6 +1109,9 @@
                 avatarsData = Object.fromEntries(playerList.filter(p => p.avatar).map(p => [p.name, p.avatar]));
                 bioData = Object.fromEntries(playerList.filter(p => p.bio).map(p => [p.name, p.bio]));
 
+                gamesData = rawGames;
+                rateStats = buildRateStats(rawGames);
+
                 // Build rankingsData from games
                 rankingsData = buildRankingsFromGames(games);
 
@@ -1041,6 +1132,7 @@
                 loadPlayers();
                 loadAddons();
                 loadHallOfFame();
+                loadGames();
 
             } catch (err) {
                 console.error('Failed to load data from server:', err);

@@ -199,6 +199,14 @@
         }
 
 
+        .year-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .year-nav button { padding: 6px 14px; border: 1px solid #1a7a42; border-radius: 16px; background: white; color: #1a7a42; font-weight: bold; cursor: pointer; }
+        .year-nav button.active { background: #1a7a42; color: white; }
+        .game-players-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+        .game-player-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
+        .game-player-row label { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; cursor: pointer; }
+        .game-player-row input[type=number] { width: 60px; padding: 4px; }
+        .game-pot-preview { margin-top: 10px; font-weight: bold; color: #333; }
         .admin-grid { display: grid; gap: 30px; }
         .admin-grid-2 { grid-template-columns: 1fr 1fr; }
         .admin-grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
@@ -374,13 +382,25 @@
         <div id="tab-games" class="tab-content">
             <!-- Add Game Form -->
             <div class="admin-card">
-                <h2>➕ Register Game</h2>
+                <h2 id="game-form-title">➕ Register Game</h2>
                 <form id="add-game-form" onsubmit="handleAddGame(event)">
+                    <input type="hidden" id="game-id">
                     <div class="admin-grid admin-grid-3">
                         <div class="form-group">
                             <label for="game-date">Game Date</label>
                             <input type="text" id="game-date" class="form-control" placeholder="DD/MM/YYYY" required>
                         </div>
+                        <div class="form-group">
+                            <label for="game-buyin">Buy-in (R$)</label>
+                            <input type="number" id="game-buyin" class="form-control" value="10" min="1" oninput="updateGamePot()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Players &amp; buy-ins / add-ons <span style="font-weight: normal; color: #666;">(leave empty for old games with only winners)</span></label>
+                        <div id="game-players-list" class="game-players-list"></div>
+                        <div id="game-pot-preview" class="game-pot-preview"></div>
+                    </div>
+                    <div class="admin-grid admin-grid-3">
                         <div class="form-group">
                             <label for="game-winner1">🥇 1st Place Winner</label>
                             <select id="game-winner1" class="form-control" required>
@@ -394,13 +414,15 @@
                             </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn-submit" style="margin-top: 10px;">Save Game Result</button>
+                    <button type="submit" class="btn-submit" id="game-submit-btn" style="margin-top: 10px;">Save Game Result</button>
+                    <button type="button" class="btn-submit" id="game-cancel-btn" style="display: none; background: #777; margin-top: 10px;" onclick="resetGameForm()">Cancel edit</button>
                 </form>
             </div>
 
             <!-- Games History Table -->
             <div class="admin-card">
                 <h2>📜 Games History</h2>
+                <div id="games-year-nav" class="year-nav"></div>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -409,13 +431,14 @@
                                 <th>Date</th>
                                 <th>🥇 1st Winner</th>
                                 <th>🥈 2nd Winner</th>
+                                <th>Players / Pot</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="games-table-body">
                             <!-- Dynamic content -->
                             <tr>
-                                <td colspan="5" style="color: #333; font-size: 1.1em; padding: 20px; text-align: center;"><span class="spinner" style="vertical-align: -0.15em; margin-right: 10px;"></span>Loading games...</td>
+                                <td colspan="6" style="color: #333; font-size: 1.1em; padding: 20px; text-align: center;"><span class="spinner" style="vertical-align: -0.15em; margin-right: 10px;"></span>Loading games...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -678,23 +701,78 @@
             w2Select.innerHTML = '<option value="">None</option>' + options;
             hofSelect.innerHTML = '<option value="">Select player...</option>' + options;
 
+            renderGamePlayers();
+
             // Restore selection if possible
             if (players.some(p => p.id === w1Val)) w1Select.value = w1Val;
             if (players.some(p => p.id === w2Val)) w2Select.value = w2Val;
             if (players.some(p => p.id === hofVal)) hofSelect.value = hofVal;
         }
 
+        // Players picker of the game form: checkbox + buy-ins/add-ons count per player.
+        function renderGamePlayers() {
+            const box = document.getElementById('game-players-list');
+            const prev = Object.fromEntries(readGameEntries().map(e => [e.id, e.addons]));
+            box.innerHTML = players.map(p => `
+                <div class="game-player-row">
+                    <label><input type="checkbox" data-id="${p.id}" ${prev[p.id] ? 'checked' : ''} onchange="updateGamePot()"> ${escapeHtml(p.name)}</label>
+                    <input type="number" class="form-control" data-addons="${p.id}" min="1" value="${prev[p.id] || 1}" title="Buy-ins / add-ons" oninput="updateGamePot()">
+                </div>`).join('');
+            updateGamePot();
+        }
+
+        function readGameEntries() {
+            return [...document.querySelectorAll('#game-players-list input[type=checkbox]:checked')].map(cb => ({
+                id: cb.dataset.id,
+                addons: parseInt(document.querySelector(`[data-addons="${cb.dataset.id}"]`).value) || 0
+            }));
+        }
+
+        // Also narrows the winner selects to the chosen players, and previews the pot split.
+        async function updateGamePot() {
+            const entries = readGameEntries();
+            const preview = document.getElementById('game-pot-preview');
+            const w1 = document.getElementById('game-winner1');
+            const w2 = document.getElementById('game-winner2');
+            const pool = entries.length ? players.filter(p => entries.some(e => e.id === p.id)) : players;
+            const v1 = w1.value, v2 = w2.value;
+            const options = pool.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+            w1.innerHTML = '<option value="">Select winner...</option>' + options;
+            w2.innerHTML = '<option value="">None</option>' + options;
+            if (pool.some(p => p.id === v1)) w1.value = v1;
+            if (pool.some(p => p.id === v2)) w2.value = v2;
+
+            if (!entries.length) { preview.textContent = ''; return; }
+            const r = (await loadFb()).calcPot(document.getElementById('game-buyin').value, entries);
+            preview.textContent = `${entries.length} players · ${r.addons} buy-ins · Pot R$ ${r.pot} · 🥇 R$ ${r.first} · 🥈 R$ ${r.second}`;
+        }
+
+        let gamesYear = null;
+
+        function setGamesYear(year) {
+            gamesYear = year;
+            renderGames();
+        }
+
         function renderGames() {
             const tbody = document.getElementById('games-table-body');
             if (games.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="color: #666; font-style: italic; text-align: center;">No games recorded.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="color: #666; font-style: italic; text-align: center;">No games recorded.</td></tr>';
                 return;
             }
 
-            // Render descending ID (latest games at top)
-            const displayGames = [...games].reverse();
+            // One page per year; the # keeps counting across all years.
+            const years = [...new Set(games.map(g => g.date.split('/')[2]))].sort().reverse();
+            if (!years.includes(gamesYear)) gamesYear = years[0];
+            document.getElementById('games-year-nav').innerHTML = years.map(y =>
+                `<button type="button" class="${y === gamesYear ? 'active' : ''}" onclick="setGamesYear('${y}')">${y}</button>`).join('');
 
-            tbody.innerHTML = displayGames.map((game, idx) => {
+            // Render descending ID (latest games at top)
+            const all = [...games].reverse();
+            const displayGames = all.map((game, i) => ({ game, n: all.length - i }))
+                .filter(x => x.game.date.endsWith('/' + gamesYear));
+
+            tbody.innerHTML = displayGames.map(({ game, n }) => {
                 const w1Avatar = avatarsData[game.winner1Name];
                 const w2Avatar = game.winner2 ? avatarsData[game.winner2Name] : null;
 
@@ -710,11 +788,15 @@
 
                 return `
                     <tr>
-                        <td style="font-weight: bold; color: #666;">${displayGames.length - idx}</td>
+                        <td style="font-weight: bold; color: #666;">${n}</td>
                         <td style="font-weight: bold;">${game.date}</td>
                         <td>${w1Display}</td>
                         <td>${w2Display}</td>
-                        <td><button class="btn-delete" onclick="handleDeleteGame('${game.id}', this)">Delete</button></td>
+                        <td>${game.prizes ? `${game.entries.length} players · R$ ${game.prizes.pot}` : '<span style="color: #999;">-</span>'}</td>
+                        <td>
+                            <button class="btn-delete" style="background: #1a7a42;" onclick="handleEditGame('${game.id}')">Edit</button>
+                            <button class="btn-delete" onclick="handleDeleteGame('${game.id}', this)">Delete</button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -821,6 +903,38 @@
             }
         }
 
+        function resetGameForm() {
+            document.getElementById('add-game-form').reset();
+            document.getElementById('game-id').value = '';
+            document.getElementById('game-form-title').textContent = '➕ Register Game';
+            document.getElementById('game-submit-btn').textContent = 'Save Game Result';
+            document.getElementById('game-cancel-btn').style.display = 'none';
+            document.querySelectorAll('#game-players-list input[type=checkbox]').forEach(cb => { cb.checked = false; });
+            renderGamePlayers();
+        }
+
+        function handleEditGame(id) {
+            const g = games.find(x => x.id === id);
+            if (!g) return;
+            resetGameForm();
+            document.getElementById('game-id').value = g.id;
+            document.getElementById('game-date').value = g.date;
+            document.getElementById('game-buyin').value = g.buyin || 10;
+            g.entries.forEach(e => {
+                const cb = document.querySelector(`#game-players-list input[data-id="${e.id}"]`);
+                if (!cb) return;
+                cb.checked = true;
+                document.querySelector(`[data-addons="${e.id}"]`).value = e.addons;
+            });
+            updateGamePot(); // narrows the winner selects synchronously
+            document.getElementById('game-winner1').value = g.winner1;
+            document.getElementById('game-winner2').value = g.winner2 || '';
+            document.getElementById('game-form-title').textContent = '✏️ Edit Game';
+            document.getElementById('game-submit-btn').textContent = 'Save Game';
+            document.getElementById('game-cancel-btn').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         async function handleAddGame(event) {
             event.preventDefault();
             const submitBtn = event.submitter;
@@ -837,13 +951,25 @@
 
             if (submitBtn) submitBtn.classList.add('is-busy');
             try {
-                await (await loadFb()).addGame({ date, winner1, winner2 });
+                await (await loadFb()).saveGame({
+                    id: document.getElementById('game-id').value || undefined,
+                    date, winner1, winner2,
+                    buyin: document.getElementById('game-buyin').value,
+                    entries: readGameEntries()
+                });
 
                 showMsg('Game results saved successfully!');
+                const wasEdit = !!document.getElementById('game-id').value;
 
-                // Reset form fields except date
-                document.getElementById('game-winner1').value = '';
-                document.getElementById('game-winner2').value = '';
+                if (wasEdit) {
+                    resetGameForm();
+                } else {
+                    // Reset form fields except date
+                    document.getElementById('game-winner1').value = '';
+                    document.getElementById('game-winner2').value = '';
+                    document.querySelectorAll('#game-players-list input[type=checkbox]').forEach(cb => { cb.checked = false; });
+                    renderGamePlayers();
+                }
 
                 await fetchGames();
             } catch (err) {
