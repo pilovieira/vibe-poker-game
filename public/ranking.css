@@ -1171,8 +1171,9 @@ h1 {
 /* Win rate (wins/games) next to the win count */
 .win-rate {
     margin-left: 8px;
-    font-size: 0.85em;
-    color: #666;
+    font-size: 1.05em;
+    font-weight: 600;
+    color: #333;
     white-space: nowrap;
 }
 
