@@ -1191,3 +1191,32 @@ h1 {
 .year-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 16px; }
 .year-nav button { padding: 6px 16px; border: 2px solid white; border-radius: 16px; background: transparent; color: white; font-weight: bold; cursor: pointer; }
 .year-nav button.active { background: white; color: #1a7a42; }
+
+/* Win / Rate switch on the left of the year header */
+.year-mode-switch {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #1a7a42;
+}
+.year-mode-switch button {
+    background: white;
+    color: #1a7a42;
+    border: none;
+    padding: 4px 10px;
+    font-weight: bold;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+.year-mode-switch button.active {
+    background: #1a7a42;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .year-mode-switch { top: 0; }
+    .year-mode-switch button { padding: 3px 7px; font-size: 0.7em; }
+}
